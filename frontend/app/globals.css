@@ -1,24 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Space+Grotesk:wght@300..700&display=swap');
 @import "tailwindcss";
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+
+@theme {
+  --color-neo-bg-base: #FFFEF2;
+  --color-neo-bg-alt: #F5F0E8;
+  --color-neo-bg-inverse: #0A0A0A;
+  
+  --color-neo-fg-primary: #0A0A0A;
+  --color-neo-fg-secondary: #1A1A1A;
+  --color-neo-fg-muted: #3D3D3D;
+  --color-neo-fg-inverse: #FFFEF2;
+  
+  --color-neo-accent-yellow: #FFE500;
+  --color-neo-accent-lime: #BFFF00;
+  --color-neo-accent-coral: #FF4D4D;
+  --color-neo-accent-orange: #FF6B00;
+  --color-neo-accent-blue: #0066FF;
+  --color-neo-accent-pink: #FF2D78;
+  --color-neo-accent-mint: #00FFAA;
+  --color-neo-accent-purple: #7B2FFF;
+
+  --color-neo-surface-card: #FFFFFF;
+  --color-neo-surface-elevated: #F0EDE0;
+  --color-neo-surface-sunken: #E8E4D4;
+
+  --color-neo-border-default: #0A0A0A;
+  --color-neo-border-strong: #000000;
+  --color-neo-border-subtle: #3D3D3D;
+
+  --color-neo-success: #00CC66;
+  --color-neo-warning: #FFB800;
+  --color-neo-error: #FF2020;
+  --color-neo-info: #0066FF;
+
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-archivo-black: "Archivo Black", sans-serif;
+  --font-ibm-plex-mono: "IBM Plex Mono", monospace;
+  --font-barlow-condensed: "Barlow Condensed", sans-serif;
+
+  --font-display: var(--font-space-grotesk), "Archivo Black", sans-serif;
+  --font-heading: var(--font-archivo-black), "Barlow Condensed", sans-serif;
+  --font-body: var(--font-ibm-plex-mono), "Courier New", monospace;
+  --font-mono: var(--font-ibm-plex-mono), "Courier Prime", monospace;
+  --font-label: var(--font-barlow-condensed), "Space Grotesk", sans-serif;
+  --font-sans: var(--font-space-grotesk), sans-serif;
+
+  --shadow-neo-xs: 2px 2px 0px #0A0A0A;
+  --shadow-neo-sm: 3px 3px 0px #0A0A0A;
+  --shadow-neo-base: 4px 4px 0px #0A0A0A;
+  --shadow-neo-md: 6px 6px 0px #0A0A0A;
+  --shadow-neo-lg: 8px 8px 0px #0A0A0A;
+  --shadow-neo-xl: 10px 10px 0px #0A0A0A;
+  --shadow-neo-brutal: 16px 16px 0px #0A0A0A;
 }
 
-@keyframes dashFlow {
-  to {
-    stroke-dashoffset: -26;
+@layer utilities {
+  .border-neo {
+    border: 3px solid #0A0A0A;
   }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+  .border-neo-thick {
+    border: 4px solid #0A0A0A;
   }
-  to {
-    transform: rotate(360deg);
+  .border-neo-heavy {
+    border: 6px solid #0A0A0A;
+  }
+  .shadow-neo {
+    box-shadow: 4px 4px 0px #0A0A0A;
+  }
+  .shadow-neo-md {
+    box-shadow: 6px 6px 0px #0A0A0A;
+  }
+  .shadow-neo-lg {
+    box-shadow: 8px 8px 0px #0A0A0A;
+  }
+  .shadow-neo-xl {
+    box-shadow: 10px 10px 0px #0A0A0A;
+  }
+  .brutal-card {
+    background-color: var(--color-neo-surface-card);
+    border: 3px solid var(--color-neo-border-default);
+    border-radius: 0;
+    box-shadow: var(--shadow-neo-md);
+    transition: box-shadow 0.1s ease, transform 0.1s ease;
+  }
+  .brutal-card:hover {
+    box-shadow: var(--shadow-neo-xl);
+    transform: translate(-4px, -4px);
   }
 }
