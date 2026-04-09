@@ -40,6 +40,9 @@ class ChangeReport:
     old_doc: ExtractedDoc | None
     changes: list[ClauseChange] = field(default_factory=list)
     summary: str = ""
+    doc_hash: str = ""
+    version: int = 1
+    is_duplicate: bool = False
 
 
 class ChangeDetectorAgent(BaseAgent):
@@ -50,7 +53,31 @@ class ChangeDetectorAgent(BaseAgent):
     ) -> ChangeReport:
         report = ChangeReport(new_doc=new_doc, old_doc=old_doc)
 
+        new_hash = self._compute_hash(new_doc.raw_text)
+        report.doc_hash = new_hash
+
+        if old_doc is not None:
+            old_hash = self._compute_hash(old_doc.raw_text)
+            if old_hash == new_hash:
+                report.is_duplicate = True
+                report.summary = "unchanged"
+                return report
+
         if old_doc is None:
+            # First ingest → treat all clauses as added
+            for c in new_doc.clauses:
+                report.changes.append(
+                    ClauseChange(
+                        change_type="added",
+                        number=c.number,
+                        old_text=None,
+                        new_text=c.text,
+                        diff=c.text,
+                        important_terms=self._find_terms(c.text),
+                    )
+                )
+            report.summary = f"{len(report.changes)} new clauses (first ingest)"
+            return report
             # First ingest → treat all clauses as added
             for c in new_doc.clauses:
                 report.changes.append(
@@ -145,3 +172,8 @@ class ChangeDetectorAgent(BaseAgent):
         for c in changes:
             stats[c.change_type] = stats.get(c.change_type, 0) + 1
         return f"{stats['added']} added · {stats['modified']} modified · {stats['removed']} removed"
+
+    def _compute_hash(self, text: str) -> str:
+        # Normalize: strip whitespace, lowercase
+        normalized = text.strip().lower()
+        return hashlib.sha256(normalized.encode()).hexdigest()

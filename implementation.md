@@ -37,12 +37,11 @@ APScheduler skeleton) are kept untouched unless explicitly required.
 ### Gaps (the work this doc plans)
 1. No ChromaDB client wrapper — `impact_mapper.py` still calls a Supabase RPC (`match_company_documents`) that does not exist in our schema
 2. No company-context model, service, or `/company` route — Impact Mapper has no per-tenant data to personalize against
-3. `change_detector.py` has clause-level diffing but **no document-level hash** and **no version tracking**, so the same circular can be processed twice
-4. The RBI pipeline ends at `report_generator.py`. There is **no final validator stage** — grounding is checked inside the report generator, which mixes concerns
-5. No service-layer **ingestion pipeline** — orchestrator is invoked directly from the route. There is no place to ingest **company** documents (only regulatory ones)
-6. Missing routes: `/query`, `/company`, `/regulations`. `/reports` exists.
-7. Logging is bare (`get_logger`) — agents `print(...)` errors instead of using a logger. No per-run trace useful for the frontend.
-8. No `companies` table in Supabase, no `doc_hash`/`version` columns on `circulars`
+3. The RBI pipeline ends at `report_generator.py`. There is **no final validator stage** — grounding is checked inside the report generator, which mixes concerns
+4. No service-layer **ingestion pipeline** — orchestrator is invoked directly from the route. There is no place to ingest **company** documents (only regulatory ones)
+5. Missing routes: `/query`, `/company`, `/regulations`. `/reports` exists.
+6. Logging is bare (`get_logger`) — agents `print(...)` errors instead of using a logger. No per-run trace useful for the frontend.
+7. No `companies` table in Supabase
 
 ---
 
@@ -136,7 +135,7 @@ create table if not exists companies (
 
 ---
 
-### Phase 3 — Change Detection: hash + version + dedup
+### Phase 3 — Change Detection: hash + version + dedup ✅ DONE
 
 **Goal:** stop re-processing identical circulars; track document versions
 in Supabase.
@@ -451,9 +450,9 @@ After each phase:
 
 ## 8. Execution Order Summary
 
-1. Phase 1 — `vector_store.py`
-2. Phase 2 — company model/service/route + `main.py` wiring
-3. Phase 3 — change detector hash/version + orchestrator short-circuit
+1. Phase 1 — `vector_store.py` ✅ DONE
+2. Phase 2 — company model/service/route + `main.py` wiring ✅ DONE
+3. Phase 3 — change detector hash/version + orchestrator short-circuit ✅ DONE
 4. Phase 4 — RBI validator + orchestrator step 6
 5. Phase 5 — impact mapper + report generator + orchestrator company context
 6. Phase 6 — ingestion pipeline service + scheduler rewire + upload route

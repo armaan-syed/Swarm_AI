@@ -72,6 +72,14 @@ class RBIOrchestrator:
         # 3. Detect changes
         change_report = await self.detector.run(new_doc, old_doc)
 
+        if change_report.is_duplicate:
+            return {
+                "ref": asdict(ref),
+                "summary": change_report.summary,
+                "severity": "none",
+                "report": None,
+            }
+
         # 4. Map impact
         impact_map = await self.mapper.run(change_report)
 
@@ -142,6 +150,16 @@ class RBIOrchestrator:
         if not client:
             return
         try:
+            # Get current version
+            res = (
+                client.table("circulars")
+                .select("version")
+                .eq("url", new_doc.ref.url)
+                .execute()
+            )
+            current_version = (res.data or [{}])[0].get("version", 0)
+            new_version = current_version + 1
+
             client.table("circulars").upsert(
                 {
                     "source": new_doc.ref.source,
@@ -151,6 +169,8 @@ class RBIOrchestrator:
                     "raw_text": new_doc.raw_text,
                     "clauses_json": [asdict(c) for c in new_doc.clauses],
                     "effective_date": new_doc.effective_date,
+                    "doc_hash": change_report.doc_hash,
+                    "version": new_version,
                 },
                 on_conflict="url",
             ).execute()

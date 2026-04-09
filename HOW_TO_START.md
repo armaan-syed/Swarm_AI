@@ -137,6 +137,12 @@ language sql stable as $$
     order by embedding <=> query_embedding
     limit match_count;
 $$;
+
+-- Phase 3: Change Detection hash + version + dedup
+alter table circulars
+  add column if not exists doc_hash text,
+  add column if not exists version  int default 1;
+create index if not exists circulars_doc_hash_idx on circulars(doc_hash);
 ```
 
 4. Copy your project URL + keys into `backend/.env`.
