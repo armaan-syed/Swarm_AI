@@ -1,7 +1,9 @@
 """Agent routes - main entry to the multi-agent system."""
+from dataclasses import asdict
+
 from fastapi import APIRouter, Depends
 
-from app.agents.orchestrator import Orchestrator
+from app.agents.rbi.orchestrator import RBIOrchestrator
 from app.api.deps import get_current_user_optional
 from app.models.schemas import AgentRequest, AgentResponse
 
@@ -13,10 +15,25 @@ async def run_agent(
     payload: AgentRequest,
     user: dict | None = Depends(get_current_user_optional),
 ) -> AgentResponse:
-    orchestrator = Orchestrator()
+    orchestrator = RBIOrchestrator()
     result = await orchestrator.run(
-        query=payload.query,
-        context=payload.context or {},
-        user_id=(user or {}).get("sub"),
+        sources=[payload.query] if payload.query else None,
+        max_docs=1,
     )
-    return AgentResponse(**result)
+    success = not bool(result.errors)
+    answer = result.reports[0].get("summary") if result.reports else "No report generated"
+    return AgentResponse(
+        success=success,
+        answer=answer,
+        steps=[
+            {
+                "agent": "rbi_orchestrator",
+                "output": asdict(result),
+            }
+        ],
+        metadata={
+            "user_id": (user or {}).get("sub"),
+            "report_count": len(result.reports),
+            "errors": result.errors,
+        },
+    )
