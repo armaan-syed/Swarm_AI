@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     # Auth
     JWT_ALGORITHM: str = "HS256"
 
+    # Scheduler (RBI/SEBI/MCA source monitoring)
+    SCHEDULER_ENABLED: bool = True
+    MONITOR_INTERVAL_HOURS: int = 10
+    MONITOR_MAX_DOCS: int = 5
+
+    # ChromaDB (vector store for embeddings + semantic search)
+    CHROMA_PERSIST_DIR: str = "./chroma_store"
+    CHROMA_COMPANY_COLLECTION: str = "company_documents"
+    CHROMA_CIRCULAR_COLLECTION: str = "regulatory_circulars"
+
 
 @lru_cache
 def get_settings() -> Settings:

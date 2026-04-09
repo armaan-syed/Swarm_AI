@@ -31,6 +31,9 @@ langchain-groq>=0.2.5
 # --- Supabase ---
 supabase>=2.28.3
 
+# --- Vector store (embeddings + semantic search) ---
+chromadb>=0.5.23
+
 # ============================================================
 # RBI COMPLIANCE PS - specific dependencies
 # ============================================================

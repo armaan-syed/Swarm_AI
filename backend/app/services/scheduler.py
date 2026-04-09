@@ -1,12 +1,10 @@
 """APScheduler — periodic RBI/SEBI/MCA source monitoring.
 
 The scheduler starts with the FastAPI app and polls regulatory sources
-every 6 hours. Interval is configurable via MONITOR_INTERVAL_HOURS in .env.
+every 10 hours (default). Interval is configurable via
+MONITOR_INTERVAL_HOURS in .env.
 """
 from __future__ import annotations
-
-import asyncio
-import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger

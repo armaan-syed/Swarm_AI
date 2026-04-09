@@ -92,6 +92,7 @@ class RBIOrchestrator:
                 "action_items": report.action_items,
                 "grounded": report.grounded,
                 "generated_at": report.generated_at,
+                "overall_severity": report.overall_severity,
             },
         }
 

@@ -6,8 +6,8 @@ directions / press releases. Detects new documents and triggers the pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any
+from urllib.parse import urljoin
 
 import httpx
 from bs4 import BeautifulSoup
@@ -73,9 +73,7 @@ class SourceMonitorAgent(BaseAgent):
                     CircularRef(
                         source="RBI",
                         title=link.get_text(strip=True),
-                        url=httpx.URL(
-                            "https://www.rbi.org.in/", params=None
-                        ).join(href).human_repr(),
+                        url=urljoin("https://www.rbi.org.in/", href),
                         published_date=row.get_text(" ", strip=True)[:40],
                         doc_type="notification",
                     )
