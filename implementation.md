@@ -53,7 +53,7 @@ Phases are ordered so each one only depends on the ones above it.
 
 ---
 
-### Phase 1 — ChromaDB Vector Store Layer
+### Phase 1 — ChromaDB Vector Store Layer  ✅ DONE
 
 **Goal:** one place to embed + store + query vectors. Replaces the
 non-existent `match_company_documents` Supabase RPC.
@@ -89,6 +89,13 @@ def get_vector_store() -> VectorStore: ...
 **Touched (minimal)** — none yet. Existing modules call this in later phases.
 
 **Risks** — Chroma 0.5+ changed the persistent-client API; pin already in `requirements.txt` is `>=0.5.23`. First run creates the persist dir.
+
+**Implementation notes (actual):**
+- `_OllamaChromaEmbeddingFunction` adapts `langchain_ollama.OllamaEmbeddings` to Chroma's `__call__(input)->Embeddings` interface, lazy-imported so module load does not require Ollama to be reachable.
+- `VectorStore` class wraps `chromadb.PersistentClient(path=settings.CHROMA_PERSIST_DIR)` with cosine HNSW.
+- All public methods (`upsert`, `query`, `delete`, `count`, `exists`) are best-effort: on Chroma init failure they log via `app.utils.logger` and return empty/False instead of raising — keeps the rest of the pipeline alive in dev when Chroma is not yet installed.
+- `get_vector_store()` is `@lru_cache`-singleton'd so cold-start cost only happens on first real use.
+- AST parse: ✅ clean.
 
 ---
 

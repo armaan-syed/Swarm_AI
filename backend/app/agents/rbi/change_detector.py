@@ -6,6 +6,7 @@ Finds added / removed / modified clauses and flags important terms.
 from __future__ import annotations
 
 import difflib
+import hashlib
 from dataclasses import dataclass, field
 from typing import Literal
 
