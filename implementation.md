@@ -99,7 +99,7 @@ def get_vector_store() -> VectorStore: ...
 
 ---
 
-### Phase 2 — Company Context (model + service + route)
+### Phase 2 — Company Context (model + service + route) ✅ DONE
 
 **Goal:** persist `company_name`, `industry`, `product_description` so the
 Impact Mapper and Report Generator can personalize.
