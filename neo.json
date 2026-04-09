@@ -1,0 +1,381 @@
+{
+  "meta": {
+    "style": "Neo-Brutalism",
+    "version": "1.0.0",
+    "description": "Design tokens for Neo-Brutalist UI — raw, bold, unapologetic. Hard shadows, thick borders, flat color, heavy type."
+  },
+
+  "colors": {
+    "background": {
+      "base": "#FFFEF2",
+      "alt": "#F5F0E8",
+      "inverse": "#0A0A0A"
+    },
+    "foreground": {
+      "primary": "#0A0A0A",
+      "secondary": "#1A1A1A",
+      "muted": "#3D3D3D",
+      "inverse": "#FFFEF2"
+    },
+    "accent": {
+      "yellow":   "#FFE500",
+      "lime":     "#BFFF00",
+      "coral":    "#FF4D4D",
+      "orange":   "#FF6B00",
+      "blue":     "#0066FF",
+      "pink":     "#FF2D78",
+      "mint":     "#00FFAA",
+      "purple":   "#7B2FFF"
+    },
+    "surface": {
+      "card":     "#FFFFFF",
+      "elevated": "#F0EDE0",
+      "sunken":   "#E8E4D4"
+    },
+    "border": {
+      "default":  "#0A0A0A",
+      "strong":   "#000000",
+      "subtle":   "#3D3D3D"
+    },
+    "state": {
+      "success":  "#00CC66",
+      "warning":  "#FFB800",
+      "error":    "#FF2020",
+      "info":     "#0066FF"
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "display":  "'Space Grotesk', 'Archivo Black', sans-serif",
+      "heading":  "'Archivo Black', 'Barlow Condensed', sans-serif",
+      "body":     "'IBM Plex Mono', 'Courier New', monospace",
+      "mono":     "'IBM Plex Mono', 'Courier Prime', monospace",
+      "label":    "'Barlow Condensed', 'Space Grotesk', sans-serif"
+    },
+    "fontSize": {
+      "xs":   "0.75rem",
+      "sm":   "0.875rem",
+      "base": "1rem",
+      "md":   "1.125rem",
+      "lg":   "1.25rem",
+      "xl":   "1.5rem",
+      "2xl":  "2rem",
+      "3xl":  "3rem",
+      "4xl":  "4rem",
+      "5xl":  "6rem",
+      "hero": "9rem"
+    },
+    "fontWeight": {
+      "regular":   "400",
+      "medium":    "500",
+      "semibold":  "600",
+      "bold":      "700",
+      "black":     "900"
+    },
+    "lineHeight": {
+      "none":    "1",
+      "tight":   "1.1",
+      "snug":    "1.25",
+      "normal":  "1.5",
+      "relaxed": "1.75"
+    },
+    "letterSpacing": {
+      "tighter": "-0.05em",
+      "tight":   "-0.025em",
+      "normal":  "0em",
+      "wide":    "0.05em",
+      "wider":   "0.1em",
+      "widest":  "0.2em"
+    },
+    "textTransform": {
+      "heading": "uppercase",
+      "label":   "uppercase",
+      "body":    "none"
+    }
+  },
+
+  "borders": {
+    "width": {
+      "thin":   "1px",
+      "base":   "2px",
+      "thick":  "3px",
+      "brutal": "4px",
+      "heavy":  "6px",
+      "slab":   "8px"
+    },
+    "style":  "solid",
+    "color":  "#0A0A0A",
+    "radius": {
+      "none":   "0px",
+      "sm":     "2px",
+      "base":   "4px",
+      "md":     "6px",
+      "brutal": "0px"
+    }
+  },
+
+  "shadows": {
+    "comment": "Neo-brutalism uses hard, offset, no-blur shadows — simulating stacked paper or offset printing.",
+    "none":   "none",
+    "xs":     "2px 2px 0px #0A0A0A",
+    "sm":     "3px 3px 0px #0A0A0A",
+    "base":   "4px 4px 0px #0A0A0A",
+    "md":     "6px 6px 0px #0A0A0A",
+    "lg":     "8px 8px 0px #0A0A0A",
+    "xl":     "10px 10px 0px #0A0A0A",
+    "2xl":    "14px 14px 0px #0A0A0A",
+    "brutal": "16px 16px 0px #0A0A0A",
+    "accent": {
+      "yellow":  "6px 6px 0px #FFE500",
+      "coral":   "6px 6px 0px #FF4D4D",
+      "blue":    "6px 6px 0px #0066FF",
+      "lime":    "6px 6px 0px #BFFF00",
+      "pink":    "6px 6px 0px #FF2D78"
+    },
+    "inset":  "inset 4px 4px 0px #0A0A0A"
+  },
+
+  "spacing": {
+    "0":    "0px",
+    "1":    "4px",
+    "2":    "8px",
+    "3":    "12px",
+    "4":    "16px",
+    "5":    "20px",
+    "6":    "24px",
+    "8":    "32px",
+    "10":   "40px",
+    "12":   "48px",
+    "16":   "64px",
+    "20":   "80px",
+    "24":   "96px",
+    "32":   "128px",
+    "40":   "160px",
+    "48":   "192px",
+    "64":   "256px"
+  },
+
+  "layout": {
+    "maxWidth": {
+      "sm":      "640px",
+      "md":      "768px",
+      "lg":      "1024px",
+      "xl":      "1280px",
+      "2xl":     "1440px",
+      "full":    "100%"
+    },
+    "containerPadding": {
+      "mobile":  "16px",
+      "tablet":  "32px",
+      "desktop": "64px"
+    },
+    "grid": {
+      "columns": 12,
+      "gap":     "24px"
+    }
+  },
+
+  "components": {
+    "button": {
+      "comment": "Buttons use thick borders, hard shadow, and shift on press to simulate a physical press.",
+      "base": {
+        "border":       "3px solid #0A0A0A",
+        "borderRadius": "0px",
+        "boxShadow":    "4px 4px 0px #0A0A0A",
+        "fontFamily":   "'Archivo Black', sans-serif",
+        "fontWeight":   "900",
+        "textTransform":"uppercase",
+        "letterSpacing":"0.05em",
+        "cursor":       "pointer",
+        "transition":   "transform 80ms ease, box-shadow 80ms ease"
+      },
+      "hover": {
+        "boxShadow":    "6px 6px 0px #0A0A0A",
+        "transform":    "translate(-2px, -2px)"
+      },
+      "active": {
+        "boxShadow":    "1px 1px 0px #0A0A0A",
+        "transform":    "translate(3px, 3px)"
+      },
+      "sizes": {
+        "sm": { "padding": "6px 14px",  "fontSize": "0.75rem" },
+        "md": { "padding": "10px 20px", "fontSize": "0.875rem" },
+        "lg": { "padding": "14px 28px", "fontSize": "1rem" },
+        "xl": { "padding": "18px 36px", "fontSize": "1.125rem" }
+      },
+      "variants": {
+        "primary":   { "background": "#FFE500", "color": "#0A0A0A" },
+        "secondary": { "background": "#FFFFFF", "color": "#0A0A0A" },
+        "danger":    { "background": "#FF4D4D", "color": "#FFFFFF" },
+        "ghost":     { "background": "transparent", "color": "#0A0A0A" },
+        "dark":      { "background": "#0A0A0A", "color": "#FFFEF2" },
+        "accent":    { "background": "#0066FF", "color": "#FFFFFF" }
+      }
+    },
+
+    "card": {
+      "base": {
+        "background":   "#FFFFFF",
+        "border":       "3px solid #0A0A0A",
+        "borderRadius": "0px",
+        "boxShadow":    "6px 6px 0px #0A0A0A",
+        "padding":      "24px"
+      },
+      "hover": {
+        "boxShadow":    "10px 10px 0px #0A0A0A",
+        "transform":    "translate(-4px, -4px)"
+      },
+      "variants": {
+        "accent-yellow": { "background": "#FFE500" },
+        "accent-coral":  { "background": "#FF4D4D", "color": "#FFFFFF" },
+        "accent-lime":   { "background": "#BFFF00" },
+        "dark":          { "background": "#0A0A0A", "color": "#FFFEF2" }
+      }
+    },
+
+    "input": {
+      "base": {
+        "background":    "#FFFFFF",
+        "border":        "3px solid #0A0A0A",
+        "borderRadius":  "0px",
+        "boxShadow":     "4px 4px 0px #0A0A0A",
+        "padding":       "10px 14px",
+        "fontFamily":    "'IBM Plex Mono', monospace",
+        "fontSize":      "0.875rem",
+        "color":         "#0A0A0A",
+        "outline":       "none",
+        "transition":    "box-shadow 80ms ease, transform 80ms ease"
+      },
+      "focus": {
+        "boxShadow":     "6px 6px 0px #0066FF",
+        "borderColor":   "#0066FF"
+      },
+      "error": {
+        "boxShadow":     "4px 4px 0px #FF4D4D",
+        "borderColor":   "#FF4D4D"
+      },
+      "placeholder": {
+        "color":         "#888888",
+        "fontStyle":     "italic"
+      }
+    },
+
+    "badge": {
+      "base": {
+        "border":        "2px solid #0A0A0A",
+        "borderRadius":  "0px",
+        "fontFamily":    "'Barlow Condensed', sans-serif",
+        "fontWeight":    "700",
+        "textTransform": "uppercase",
+        "letterSpacing": "0.08em",
+        "padding":       "2px 8px",
+        "fontSize":      "0.7rem"
+      },
+      "variants": {
+        "default":  { "background": "#FFFEF2",  "color": "#0A0A0A" },
+        "yellow":   { "background": "#FFE500",  "color": "#0A0A0A" },
+        "lime":     { "background": "#BFFF00",  "color": "#0A0A0A" },
+        "coral":    { "background": "#FF4D4D",  "color": "#FFFFFF" },
+        "blue":     { "background": "#0066FF",  "color": "#FFFFFF" },
+        "dark":     { "background": "#0A0A0A",  "color": "#FFFEF2" }
+      }
+    },
+
+    "divider": {
+      "default": { "borderTop": "3px solid #0A0A0A" },
+      "dashed":  { "borderTop": "3px dashed #0A0A0A" },
+      "thick":   { "borderTop": "6px solid #0A0A0A" }
+    },
+
+    "tooltip": {
+      "base": {
+        "background":    "#0A0A0A",
+        "color":         "#FFFEF2",
+        "border":        "2px solid #0A0A0A",
+        "borderRadius":  "0px",
+        "boxShadow":     "3px 3px 0px #0A0A0A",
+        "padding":       "6px 12px",
+        "fontFamily":    "'IBM Plex Mono', monospace",
+        "fontSize":      "0.75rem"
+      }
+    },
+
+    "modal": {
+      "overlay": {
+        "background":   "rgba(10, 10, 10, 0.75)"
+      },
+      "container": {
+        "background":    "#FFFEF2",
+        "border":        "4px solid #0A0A0A",
+        "borderRadius":  "0px",
+        "boxShadow":     "12px 12px 0px #0A0A0A"
+      }
+    },
+
+    "navbar": {
+      "base": {
+        "background":    "#FFFEF2",
+        "borderBottom":  "3px solid #0A0A0A",
+        "height":        "64px",
+        "padding":       "0 32px"
+      }
+    },
+
+    "tag": {
+      "base": {
+        "border":        "2px solid #0A0A0A",
+        "background":    "#FFFEF2",
+        "borderRadius":  "0px",
+        "padding":       "4px 10px",
+        "fontFamily":    "'IBM Plex Mono', monospace",
+        "fontSize":      "0.75rem"
+      }
+    }
+  },
+
+  "motion": {
+    "comment": "Neo-brutalism uses snappy, mechanical transitions — no easing curves that feel 'soft'.",
+    "duration": {
+      "instant": "60ms",
+      "fast":    "100ms",
+      "base":    "150ms",
+      "slow":    "250ms"
+    },
+    "easing": {
+      "snappy":  "cubic-bezier(0.2, 0, 0, 1)",
+      "linear":  "linear",
+      "bounce":  "cubic-bezier(0.34, 1.56, 0.64, 1)"
+    },
+    "press": {
+      "transform":  "translate(4px, 4px)",
+      "boxShadow":  "1px 1px 0px #0A0A0A"
+    },
+    "lift": {
+      "transform":  "translate(-4px, -4px)",
+      "boxShadow":  "10px 10px 0px #0A0A0A"
+    }
+  },
+
+  "patterns": {
+    "comment": "CSS background patterns commonly used in Neo-Brutalism.",
+    "grid": "repeating-linear-gradient(#0A0A0A 0 1px, transparent 1px 100%), repeating-linear-gradient(90deg, #0A0A0A 0 1px, transparent 1px 100%)",
+    "dots": "radial-gradient(circle, #0A0A0A 1px, transparent 1px)",
+    "dotsSize": "24px 24px",
+    "diagonal": "repeating-linear-gradient(45deg, #0A0A0A 0, #0A0A0A 1px, transparent 0, transparent 50%)",
+    "diagonalSize": "8px 8px",
+    "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E\")"
+  },
+
+  "accessibility": {
+    "focusRing": {
+      "outline":       "3px solid #0066FF",
+      "outlineOffset": "3px"
+    },
+    "minimumContrast": "4.5:1",
+    "reducedMotion": {
+      "transition": "none",
+      "animation":  "none"
+    }
+  }
+}
