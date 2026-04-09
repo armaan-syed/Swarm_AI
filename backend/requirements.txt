@@ -1,35 +1,41 @@
 # --- FastAPI core ---
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-python-multipart==0.0.9
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.17
 
 # --- Settings & validation ---
-pydantic==2.9.2
-pydantic-settings==2.5.2
+pydantic==2.10.3
+pydantic-settings==2.6.1
 python-dotenv==1.0.1
 
 # --- Auth (JWT verification for Supabase tokens) ---
 python-jose[cryptography]==3.3.0
 
 # --- HTTP clients ---
-httpx==0.27.2
+httpx==0.28.1
 requests==2.32.3
 
-# --- LangChain / OpenAI ---
-langchain==0.3.0
-langchain-core==0.3.0
-langchain-openai==0.2.0
-langchain-community==0.3.0
-openai==1.47.0
+# --- LangChain core ---
+langchain==0.3.10
+langchain-core==0.3.22
+langchain-community==0.3.10
+
+# --- LLM providers ---
+# Ollama is the default LLM (local, free). Install Ollama: https://ollama.com
+# Then: `ollama pull llama3.2 && ollama pull nomic-embed-text`
+langchain-ollama==0.2.1
+
+# Groq is an optional fallback (free tier API). Get a key: https://console.groq.com/keys
+langchain-groq==0.2.1
 
 # --- Supabase ---
-supabase==2.8.0
+supabase==2.10.0
 
 # --- Optional: background work / realtime (uncomment if/when needed) ---
-# redis==5.0.8
+# redis==5.2.0
 # celery==5.4.0
-# websockets==13.0.1
+# websockets==14.1
 
 # --- Dev / testing ---
-pytest==8.3.3
+pytest==8.3.4
 pytest-asyncio==0.24.0

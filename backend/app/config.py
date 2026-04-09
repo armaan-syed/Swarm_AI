@@ -12,10 +12,15 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
-    # OpenAI
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4o-mini"
-    OPENAI_TEMPERATURE: float = 0.2
+    # LLM - Ollama (default, local & free)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.2"
+    OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
+    LLM_TEMPERATURE: float = 0.2
+
+    # LLM - Groq (optional fallback, free tier API)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
 
     # Supabase
     SUPABASE_URL: str = ""
