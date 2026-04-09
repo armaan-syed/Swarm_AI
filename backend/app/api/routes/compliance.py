@@ -1,7 +1,6 @@
 """Compliance API routes — RBI/SEBI/MCA pipeline."""
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Form
 
-from app.agents.rbi.orchestrator import RBIOrchestrator
 from app.db.supabase_client import get_supabase
 from app.models.compliance_schemas import (
     CircularOut,
@@ -10,6 +9,7 @@ from app.models.compliance_schemas import (
     RunOneRequest,
     RunPipelineRequest,
 )
+from app.services.ingestion_pipeline import IngestionPipeline
 
 router = APIRouter()
 
@@ -18,10 +18,12 @@ router = APIRouter()
 
 @router.post("/run", response_model=PipelineRunOut)
 async def run_pipeline(payload: RunPipelineRequest) -> PipelineRunOut:
-    """Scan sources for new circulars and run the full 5-agent pipeline."""
-    orchestrator = RBIOrchestrator()
-    result = await orchestrator.run(
-        sources=payload.sources, max_docs=payload.max_docs
+    """Scan sources for new circulars and run the full 6-agent pipeline."""
+    pipeline = IngestionPipeline()
+    result = await pipeline.run_regulatory(
+        sources=payload.sources,
+        max_docs=payload.max_docs,
+        company_id=payload.company_id,
     )
     return PipelineRunOut(
         found=len(result.found_refs),
@@ -34,6 +36,8 @@ async def run_pipeline(payload: RunPipelineRequest) -> PipelineRunOut:
 @router.post("/run-one")
 async def run_one(payload: RunOneRequest) -> dict:
     """Run the pipeline on a single URL (for demo/testing)."""
+    from app.agents.rbi.orchestrator import RBIOrchestrator
+
     orchestrator = RBIOrchestrator()
     try:
         report = await orchestrator.run_one(url=payload.url, source=payload.source)
@@ -47,9 +51,31 @@ async def run_pipeline_background(
     payload: RunPipelineRequest, bg: BackgroundTasks
 ) -> dict:
     """Trigger pipeline in background and return immediately."""
-    orchestrator = RBIOrchestrator()
-    bg.add_task(orchestrator.run, payload.sources, payload.max_docs)
+    pipeline = IngestionPipeline()
+    bg.add_task(pipeline.run_regulatory, payload.sources, payload.max_docs, payload.company_id)
     return {"message": "Pipeline started in background"}
+
+
+@router.post("/documents/upload")
+async def upload_company_document(
+    company_id: str = Form(...),
+    file: UploadFile = File(...),
+) -> dict:
+    """Upload a company document (PDF/HTML/text) for embedding into ChromaDB."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    raw_bytes = await file.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    pipeline = IngestionPipeline()
+    result = await pipeline.ingest_company_document(
+        company_id=company_id,
+        filename=file.filename,
+        raw_bytes=raw_bytes,
+    )
+    return {"success": True, "result": result}
 
 
 # ── Data reads ─────────────────────────────────────────────────────────────────

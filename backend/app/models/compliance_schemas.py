@@ -1,11 +1,12 @@
 """Pydantic schemas for the RBI compliance pipeline."""
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 
 class RunPipelineRequest(BaseModel):
     sources: list[Literal["RBI", "SEBI", "MCA"]] | None = None
     max_docs: int = Field(default=5, ge=1, le=20)
+    company_id: Optional[str] = Field(default=None, description="Optional company ID for contextual analysis")
 
 
 class RunOneRequest(BaseModel):
@@ -31,11 +32,19 @@ class ReportOut(BaseModel):
     overall_severity: str
 
 
+class ValidationOut(BaseModel):
+    """Validation results from the RBI Validator Agent."""
+    is_valid: bool
+    confidence: float
+    issues: list[str] = []
+
+
 class PipelineResultOut(BaseModel):
     ref: dict[str, Any]
     summary: str
     severity: str
-    report: ReportOut
+    report: ReportOut | None = None
+    validation: ValidationOut | None = None
 
 
 class PipelineRunOut(BaseModel):

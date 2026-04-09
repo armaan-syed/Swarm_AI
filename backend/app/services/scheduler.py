@@ -19,12 +19,12 @@ _scheduler: AsyncIOScheduler | None = None
 
 async def _run_pipeline() -> None:
     """Job executed by the scheduler — runs full compliance pipeline."""
-    from app.agents.rbi.orchestrator import RBIOrchestrator
+    from app.services.ingestion_pipeline import IngestionPipeline
 
     logger.info("Scheduled pipeline run starting...")
     try:
-        orchestrator = RBIOrchestrator()
-        result = await orchestrator.run(max_docs=settings.MONITOR_MAX_DOCS)
+        pipeline = IngestionPipeline()
+        result = await pipeline.run_regulatory(max_docs=settings.MONITOR_MAX_DOCS)
         logger.info(
             "Pipeline done. found=%d processed=%d errors=%d",
             len(result.found_refs),

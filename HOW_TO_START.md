@@ -143,6 +143,21 @@ alter table circulars
   add column if not exists doc_hash text,
   add column if not exists version  int default 1;
 create index if not exists circulars_doc_hash_idx on circulars(doc_hash);
+
+-- Phase 4: Validation fields on impact reports
+alter table impact_reports
+  add column if not exists is_valid    boolean default true,
+  add column if not exists confidence  numeric default 1.0,
+  add column if not exists validation_issues jsonb default '[]'::jsonb;
+
+-- Phase 6: Company documents metadata table
+create table if not exists company_documents (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid references companies(id) on delete cascade,
+  filename text,
+  doc_hash text,
+  ingested_at timestamptz default now()
+);
 ```
 
 4. Copy your project URL + keys into `backend/.env`.

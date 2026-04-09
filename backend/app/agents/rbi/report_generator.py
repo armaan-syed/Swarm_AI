@@ -53,10 +53,20 @@ class ReportGeneratorAgent(BaseAgent):
         self,
         change_report: ChangeReport,
         impact_map: ImpactMap,
+        company_context=None,
     ) -> ValidatedReport:
         clause_payload = self._build_clause_payload(change_report, impact_map)
 
+        # Optional company context header
+        context_line = ""
+        if company_context:
+            parts = [f"For: {company_context.name}"]
+            if company_context.industry:
+                parts.append(f"({company_context.industry})")
+            context_line = " ".join(parts) + "\n"
+
         prompt = (
+            f"{context_line}"
             f"Source: {change_report.new_doc.ref.source}\n"
             f"Document: {change_report.new_doc.ref.title}\n"
             f"Effective date: {change_report.new_doc.effective_date or 'not specified'}\n"

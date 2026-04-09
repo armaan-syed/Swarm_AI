@@ -1,5 +1,5 @@
 """Pydantic schemas shared across the API."""
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
@@ -23,3 +23,18 @@ class AgentResponse(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: str
+
+
+class QueryRequest(BaseModel):
+    """Natural-language compliance question."""
+    query: str = Field(..., description="The question to ask")
+    company_id: Optional[str] = Field(default=None, description="Optional company ID for context scoping")
+    context: Optional[str] = Field(default=None, description="Optional additional context")
+
+
+class QueryResponse(BaseModel):
+    """Response to a compliance query."""
+    success: bool = True
+    answer: str
+    company_id: Optional[str] = None
+

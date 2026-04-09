@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api.routes import agents, auth, compliance, company, health
+from app.api.routes import agents, auth, compliance, company, health, query, regulations, logs
 from app.services.scheduler import start_scheduler, stop_scheduler
 from app.utils.logger import get_logger
 
@@ -46,8 +46,12 @@ def create_app() -> FastAPI:
     app.include_router(agents.router, prefix=f"{prefix}/agents", tags=["agents"])
     app.include_router(compliance.router, prefix=f"{prefix}/compliance", tags=["compliance"])
     app.include_router(company.router, prefix=f"{prefix}/company", tags=["company"])
+    app.include_router(query.router, prefix=f"{prefix}/query", tags=["query"])
+    app.include_router(regulations.router, prefix=f"{prefix}/regulations", tags=["regulations"])
+    app.include_router(logs.router, prefix=f"{prefix}/logs", tags=["logs"])
 
     return app
 
 
 app = create_app()
+

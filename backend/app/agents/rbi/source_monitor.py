@@ -14,6 +14,9 @@ from bs4 import BeautifulSoup
 
 from app.agents.base import BaseAgent
 from app.db.supabase_client import get_supabase
+from app.utils.logger import get_logger
+
+logger = get_logger("source_monitor")
 
 
 @dataclass
@@ -50,7 +53,7 @@ class SourceMonitorAgent(BaseAgent):
                     resp.raise_for_status()
                     found.extend(self._parse(source, resp.text))
                 except Exception as exc:  # noqa: BLE001
-                    print(f"[SourceMonitor] {source} failed: {exc}")
+                    logger.exception("[%s] source fetch failed", source)
 
         return self._filter_new(found)
 

@@ -2,8 +2,9 @@
 
 Converts legal/regulatory changes into business impact:
   - maps changed clauses to departments / processes
-  - retrieves similar past cases via pgvector
+  - retrieves similar documents via ChromaDB (replaces broken Supabase RPC)
   - estimates severity (low / medium / high)
+  - optionally personalizes analysis using company context
 """
 from __future__ import annotations
 
@@ -11,12 +12,13 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import OllamaEmbeddings
 
 from app.agents.base import BaseAgent
 from app.agents.rbi.change_detector import ChangeReport, ClauseChange
 from app.config import settings
-from app.db.supabase_client import get_supabase
+from app.utils.logger import get_logger
+
+logger = get_logger("impact_mapper")
 
 Severity = Literal["LOW", "MEDIUM", "HIGH"]
 
@@ -62,34 +64,45 @@ class ImpactMap:
 class ImpactMapperAgent(BaseAgent):
     name = "impact_mapper"
 
-    def __init__(self) -> None:
+    def __init__(self, company_context=None) -> None:
         super().__init__()
-        self.embeddings = OllamaEmbeddings(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.OLLAMA_EMBED_MODEL,
-        )
+        self._company_context = company_context
 
-    async def run(self, change_report: ChangeReport) -> ImpactMap:
+    async def run(self, change_report: ChangeReport, company_context=None) -> ImpactMap:
+        # Allow runtime override of company context
+        ctx = company_context or self._company_context
+
         impact_map = ImpactMap()
         for change in change_report.changes:
             if change.change_type == "unchanged":
                 continue
-            item = await self._analyze_change(change)
+            item = await self._analyze_change(change, ctx)
             impact_map.items.append(item)
 
         impact_map.overall_severity = self._roll_up(impact_map.items)
         return impact_map
 
     # ------------------------------------------------------------------
-    async def _analyze_change(self, change: ClauseChange) -> ClauseImpact:
+    async def _analyze_change(self, change: ClauseChange, company_context=None) -> ClauseImpact:
         text = change.new_text or change.old_text or ""
-        similar = await self._find_similar(text)
+        similar = await self._find_similar(text, company_context)
         departments = self._guess_departments(text)
+
+        # Build system prompt with optional company context
+        system_prompt = IMPACT_SYSTEM
+        if company_context:
+            system_prompt += (
+                f"\n\nCompany context:\n"
+                f"- Name: {company_context.name}\n"
+                f"- Industry: {company_context.industry or 'not specified'}\n"
+                f"- Products/Services: {company_context.product_description or 'not specified'}\n"
+                f"Tailor your analysis to this company's specific business."
+            )
 
         # LLM call for severity + impact statement
         try:
             response = await self.llm.ainvoke([
-                SystemMessage(content=IMPACT_SYSTEM),
+                SystemMessage(content=system_prompt),
                 HumanMessage(
                     content=(
                         f"Change type: {change.change_type}\n"
@@ -115,18 +128,26 @@ class ImpactMapperAgent(BaseAgent):
             similar_docs=similar,
         )
 
-    async def _find_similar(self, text: str) -> list[dict]:
-        client = get_supabase()
-        if not client:
-            return []
+    async def _find_similar(self, text: str, company_context=None) -> list[dict]:
+        """Query ChromaDB for similar company documents instead of the
+        broken Supabase RPC match_company_documents."""
         try:
-            vector = self.embeddings.embed_query(text[:2000])
-            result = client.rpc(
-                "match_company_documents",
-                {"query_embedding": vector, "match_count": 3},
-            ).execute()
-            return getattr(result, "data", []) or []
-        except Exception:
+            from app.services.vector_store import get_vector_store
+
+            vs = get_vector_store()
+            where_filter = None
+            if company_context:
+                where_filter = {"company_id": company_context.id}
+
+            results = vs.query(
+                collection=settings.CHROMA_COMPANY_COLLECTION,
+                text=text[:2000],
+                n_results=3,
+                where=where_filter,
+            )
+            return results
+        except Exception as exc:
+            logger.debug("ChromaDB similarity search failed: %s", exc)
             return []
 
     def _guess_departments(self, text: str) -> list[str]:

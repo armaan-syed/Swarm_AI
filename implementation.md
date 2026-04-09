@@ -162,7 +162,7 @@ create index if not exists circulars_doc_hash_idx on circulars(doc_hash);
 
 ---
 
-### Phase 4 — RBI Validator Agent (final stage)
+### Phase 4 — RBI Validator Agent (final stage) ✅ DONE
 
 **Goal:** dedicated final-stage validator separate from `report_generator.py`.
 Confirms grounding, completeness, and emits a single confidence score.
@@ -218,9 +218,16 @@ validator.
 needs to surface the warning). Orchestrator returns the report
 regardless, with the validation block attached.
 
+**Implementation notes (actual):**
+- `RBIValidatorAgent` checks grounding (citation→clause mapping), section completeness, action-item presence, and severity consistency.
+- Weighted confidence: grounding 35%, sections 25%, action items 20%, severity 20%.
+- `ValidationResult` dataclass with `is_valid`, `confidence`, `issues`, `final_report`.
+- Orchestrator persists `is_valid`, `confidence`, and `validation_issues` in impact_reports table.
+- AST parse: ✅ clean.
+
 ---
 
-### Phase 5 — Orchestrator Chaining + Structured I/O + Company Context
+### Phase 5 — Orchestrator Chaining + Structured I/O + Company Context ✅ DONE
 
 **Goal:** clean JSON-shaped handoffs between stages and propagate
 company context end-to-end.
@@ -241,9 +248,17 @@ company context end-to-end.
 
 **Risks** — the existing Supabase persistence in `_persist()` is unchanged.
 
+**Implementation notes (actual):**
+- `ImpactMapperAgent._find_similar` replaced broken `match_company_documents` RPC with `VectorStore.query(CHROMA_COMPANY_COLLECTION, ...)`.
+- Company context injected into LLM system prompt for tenant-aware severity/department mapping.
+- `ReportGeneratorAgent.run()` now accepts optional `company_context` kwarg; prepends "For: <name> (<industry>)" to the prompt.
+- `RBIOrchestrator.run()` accepts `company_id`, fetches `CompanyContext` once, threads it via `_process_one(ref, company_context)`.
+- All `print()` calls in orchestrator replaced with `logger.exception()`.
+- AST parse: ✅ clean.
+
 ---
 
-### Phase 6 — Ingestion Pipeline Service
+### Phase 6 — Ingestion Pipeline Service ✅ DONE
 
 **Goal:** a single service-layer entry point for both flows:
 1. **Regulatory ingestion** (existing RBI orchestrator)
@@ -281,9 +296,17 @@ class IngestionPipeline:
 
 **Risks** — none. Pure composition of existing pieces.
 
+**Implementation notes (actual):**
+- `IngestionPipeline` class with `run_regulatory()` and `ingest_company_document()` methods.
+- Company doc ingestion: extract text (PDF/HTML/plain), chunk at ~4000 chars with 200-char overlap, sha256 dedup, upsert to ChromaDB, optional Supabase metadata row.
+- Scheduler now imports `IngestionPipeline` instead of `RBIOrchestrator`.
+- `POST /compliance/documents/upload` accepts multipart form: `company_id` + `file`.
+- `POST /compliance/run` now passes `company_id` through the pipeline.
+- AST parse: ✅ clean.
+
 ---
 
-### Phase 7 — REST API: /query, /company, /regulations
+### Phase 7 — REST API: /query, /company, /regulations ✅ DONE
 
 **Goal:** flesh out the public API surface required by the spec.
 
@@ -306,9 +329,16 @@ class IngestionPipeline:
 
 **Risks** — none. New routes only.
 
+**Implementation notes (actual):**
+- `POST /query` retrieves ChromaDB context (company + regulatory), builds enriched LLM prompt, returns `QueryResponse`.
+- `GET /regulations` lists circulars with pagination/source filter; `GET /regulations/{id}` returns full clause JSON.
+- `QueryRequest` / `QueryResponse` schemas added to `app/models/schemas.py`.
+- All three new routers registered in `main.py`.
+- AST parse: ✅ clean.
+
 ---
 
-### Phase 8 — Logging Extensions
+### Phase 8 — Logging Extensions ✅ DONE
 
 **Goal:** structured logs for agent runs, scheduler jobs, errors;
 optional in-memory ring buffer for the frontend.
@@ -324,6 +354,15 @@ optional in-memory ring buffer for the frontend.
 - `backend/app/api/routes/logs.py` (optional) — `GET /logs/recent` returns the buffer for the frontend's "Activity" panel.
 
 **Risks** — none.
+
+**Implementation notes (actual):**
+- `get_agent_logger(name)` and `get_scheduler_logger()` thin wrappers added.
+- `RunLogStore` class: capped `deque[dict]` (200 entries), `record()` auto-timestamps, `recent(limit)` returns newest-first.
+- `get_run_log_store()` module-level singleton.
+- `GET /logs/recent` route returns the buffer.
+- `source_monitor.py`: `print(f"...")` → `logger.exception("[%s] source fetch failed", source)`.
+- `orchestrator.py`: `print(f"...")` → `logger.exception(...)` (done in Phase 4/5 rewrite).
+- AST parse: ✅ clean.
 
 ---
 
@@ -453,11 +492,11 @@ After each phase:
 1. Phase 1 — `vector_store.py` ✅ DONE
 2. Phase 2 — company model/service/route + `main.py` wiring ✅ DONE
 3. Phase 3 — change detector hash/version + orchestrator short-circuit ✅ DONE
-4. Phase 4 — RBI validator + orchestrator step 6
-5. Phase 5 — impact mapper + report generator + orchestrator company context
-6. Phase 6 — ingestion pipeline service + scheduler rewire + upload route
-7. Phase 7 — `/query`, `/regulations` routes
-8. Phase 8 — logger helpers + replace `print`s
+4. Phase 4 — RBI validator + orchestrator step 6 ✅ DONE
+5. Phase 5 — impact mapper + report generator + orchestrator company context ✅ DONE
+6. Phase 6 — ingestion pipeline service + scheduler rewire + upload route ✅ DONE
+7. Phase 7 — `/query`, `/regulations` routes ✅ DONE
+8. Phase 8 — logger helpers + replace `print`s ✅ DONE
 
 Each phase ends with an AST smoke test and a manual `curl` of any new
 endpoint it exposes.
