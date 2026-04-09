@@ -15,10 +15,10 @@ python-jose[cryptography]>=3.3.0
 httpx>=0.28.1
 requests>=2.32.3
 
-# --- LangChain core (pinned to 0.3.x - matches our agent code) ---
-langchain>=0.3.28
-langchain-core>=0.3.84
-langchain-community>=0.3.31
+# --- LangChain core (pinned to 0.3.x) ---
+langchain==0.3.28
+langchain-core==0.3.84
+langchain-community==0.3.31
 
 # --- LLM providers ---
 # Ollama: local & free. Install → https://ollama.com
@@ -31,10 +31,32 @@ langchain-groq>=0.2.5
 # --- Supabase ---
 supabase>=2.28.3
 
-# --- Optional: background work / realtime (uncomment when needed) ---
-# redis>=5.2.0
-# celery>=5.4.0
-# websockets>=14.1
+# ============================================================
+# RBI COMPLIANCE PS - specific dependencies
+# ============================================================
+
+# --- Web scraping (RBI/SEBI/MCA source monitoring) ---
+beautifulsoup4==4.12.3
+lxml==5.3.0
+playwright==1.49.1          # for JS-heavy pages (SEBI dashboards etc.)
+
+# --- PDF parsing (circulars are PDFs) ---
+pymupdf==1.25.1             # fast, primary PDF extractor (imports as `fitz`)
+pdfplumber==0.11.5          # fallback for tables/columns
+
+# --- Scheduling (periodic monitoring of regulatory sources) ---
+apscheduler==3.11.0
+
+# --- Text diff / change detection ---
+# difflib is stdlib
+rapidfuzz==3.11.0            # fuzzy clause matching
+
+# ============================================================
+
+# --- Optional: background work / realtime ---
+# redis==5.2.0
+# celery==5.4.0
+# websockets==14.1
 
 # --- Dev / testing ---
 pytest>=8.3.4

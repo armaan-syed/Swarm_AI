@@ -6,9 +6,10 @@ Quick setup guide for the Agentic AI base project.
 
 ## Prerequisites
 
-- **Python 3.10+**
+- **Python 3.10+** (for backend venv)
 - **Node.js 18+** (for frontend, when added)
-- **Ollama** — local LLM runtime → https://ollama.com
+- **Ollama** — **system-wide desktop app**, not a Python package → https://ollama.com
+  - Required for the LLM to run locally on your PC
 - **Git**
 - *(Optional)* **Groq API key** for fallback LLM → https://console.groq.com/keys
 - *(Optional)* **Supabase project** for auth + memory → https://supabase.com
@@ -24,16 +25,24 @@ cd SunHacks
 
 ---
 
-## 2. Install Ollama and pull models
+## 2. Install Ollama (system-wide, NOT in venv)
 
-After installing Ollama from the link above:
+Ollama is a **standalone desktop application**, not a Python package.
+
+1. **Download & install Ollama** from https://ollama.com (this is system-wide on your PC)
+2. **After installation**, run these commands in your terminal/PowerShell:
 
 ```bash
 ollama pull llama3.2
 ollama pull nomic-embed-text
 ```
 
-Make sure Ollama is running (it usually starts automatically; otherwise run `ollama serve`).
+3. **Keep Ollama running** — the desktop app usually auto-starts. If not, run:
+```bash
+ollama serve
+```
+
+The Python package `langchain-ollama` (in `requirements.txt`) talks to Ollama via HTTP — so Ollama must be running as a separate process on your machine.
 
 ---
 
