@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
+import { CompanyProvider } from "./context/CompanyContext";
 
 export const metadata: Metadata = {
   title: "Autonomous Compliance & Regulatory Intelligence System",
@@ -14,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[#FFFEF2] text-[#0A0A0A] font-sans selection:bg-[#FFE500] selection:text-[#0A0A0A]">
-        {children}
+        <AuthProvider>
+          <CompanyProvider>
+            {children}
+          </CompanyProvider>
+        </AuthProvider>
       </body>
     </html>
   );
