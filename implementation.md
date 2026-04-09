@@ -1,4 +1,4 @@
-# Backend Completion — Implementation Plan
+# Backend Completion — Implementation Plan.
 
 Status: planning document. Scope is **only the missing pieces** of the
 RBI compliance backend. Existing modules (5 RBI agents, generic
