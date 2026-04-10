@@ -136,11 +136,12 @@ class RBIOrchestrator:
         from app.agents.rbi.report_generator import ValidatedReport
         report = ValidatedReport(
             markdown=f"### Executive Summary\n{blitz_data.summary}\n\n### Action Items\n" + 
-                     "\n".join([f"- {i['task']}" for i in blitz_data.action_items]),
+                     "\n".join([f"- {i}" for i in blitz_data.action_items]),
             citations=["Verified against source text"],
             affected_teams=blitz_data.affected_teams,
             action_items=blitz_data.action_items,
             grounded=True,
+            overall_severity=blitz_data.severity,
             email_drafts=blitz_data.emails
         )
 
@@ -274,10 +275,15 @@ class RBIOrchestrator:
             ).execute()
 
             # 2. Insert Impact Report
+            # determine severity safely when impact_map may be None (speed/blitz mode)
+            severity_val = impact_map.overall_severity if impact_map else (
+                getattr(report, "overall_severity", None) or "PENDING"
+            )
+
             report_row = {
                 "circular_url": new_doc.ref.url,
                 "summary": change_report.summary,
-                "severity": impact_map.overall_severity,
+                "severity": severity_val,
                 "markdown": report.markdown,
                 "citations": report.citations,
                 "affected_teams": report.affected_teams,
