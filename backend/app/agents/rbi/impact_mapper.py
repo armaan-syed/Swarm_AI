@@ -72,13 +72,25 @@ class ImpactMapperAgent(BaseAgent):
         # Allow runtime override of company context
         ctx = company_context or self._company_context
 
-        impact_map = ImpactMap()
-        for change in change_report.changes:
-            if change.change_type == "unchanged":
-                continue
-            item = await self._analyze_change(change, ctx)
-            impact_map.items.append(item)
+        import asyncio
+        
+        # Throttling semaphore to prevent overloading local Ollama
+        semaphore = asyncio.Semaphore(2)
+        
+        # Limit analysis to Top 10 changes for high-speed demo performance
+        active_changes = [c for c in change_report.changes if c.change_type != "unchanged"][:10]
+        
+        async def throttled_analyze(change):
+            async with semaphore:
+                return await self._analyze_change(change, ctx)
 
+        if not active_changes:
+            return ImpactMap()
+
+        logger.info("[Agent 4] Running %d throttled reasoning tasks for impact mapping...", len(active_changes))
+        results = await asyncio.gather(*[throttled_analyze(c) for c in active_changes])
+        
+        impact_map = ImpactMap(items=list(results))
         impact_map.overall_severity = self._roll_up(impact_map.items)
         return impact_map
 
@@ -108,16 +120,25 @@ class ImpactMapperAgent(BaseAgent):
                 f"Use this context to inform your impact analysis."
             )
 
+        # Build RAG context from similarity search results
+        rag_context = ""
+        if similar:
+            rag_context = "\n\nRelevant Internal Policy Snippets (from ChromaDB):\n"
+            for i, doc in enumerate(similar):
+                title = doc.get("metadata", {}).get("title", "Internal Document")
+                rag_context += f"[{i+1}] Source: {title}\nText: {doc.get('document', '')[:500]}\n---\n"
+
         # LLM call for severity + impact statement
         try:
             response = await self.llm.ainvoke([
-                SystemMessage(content=system_prompt),
+                SystemMessage(content=system_prompt + rag_context),
                 HumanMessage(
                     content=(
                         f"Change type: {change.change_type}\n"
                         f"Clause {change.number}\n"
                         f"Important terms: {', '.join(change.important_terms) or 'none'}\n"
-                        f"Text:\n{text[:1500]}"
+                        f"Text:\n{text[:1500]}\n\n"
+                        f"Task: Identify if this regulatory change conflicts with or updates the Internal Policy Snippets provided above."
                     )
                 ),
             ])

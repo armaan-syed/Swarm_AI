@@ -24,9 +24,10 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/onboarding/company");
-    } catch {
-      setError("Login failed. Check your credentials and try again.");
+      router.push("/dashboard");
+    } catch (err: any) {
+      const msg = err?.message || "Login failed. Check your credentials.";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

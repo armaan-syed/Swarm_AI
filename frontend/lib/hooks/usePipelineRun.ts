@@ -90,7 +90,7 @@ export function usePipelineRun() {
             currentThought: agent.phase === "running" ? getRandomThought(agent.name) : agent.currentThought,
           })),
         }));
-      }, 600);
+      }, 250);
 
       // Wait for real backend response (max 6 minutes to allow for slow Ollama generation)
       const result = await Promise.race([

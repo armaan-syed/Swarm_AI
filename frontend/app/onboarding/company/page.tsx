@@ -71,7 +71,7 @@ export default function OnboardingCompanyPage() {
 
             <Input
               label="Company Name"
-              placeholder="e.g. Acme Corp AI"
+              placeholder="e.g. Life Insurance Corporation (LIC)"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -79,7 +79,7 @@ export default function OnboardingCompanyPage() {
 
             <Input
               label="Industry (Optional)"
-              placeholder="e.g. Financial Services, Healthcare"
+              placeholder="e.g. Insurance & Financial Services"
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
             />
@@ -90,7 +90,7 @@ export default function OnboardingCompanyPage() {
               </label>
               <textarea
                 className="bg-white border-neo border-[3px] rounded-none px-[14px] py-[10px] font-mono text-sm text-[#0A0A0A] outline-none shadow-[4px_4px_0px_#0A0A0A] focus:shadow-[6px_6px_0px_#0066FF] focus:border-[var(--color-neo-accent-blue)] transition-all placeholder:text-[#888] placeholder:italic min-h-[120px] resize-none"
-                placeholder="Describe your primary products, data pipelines, and target regions..."
+                placeholder="e.g. National insurance provider managing digital lending and high-frequency payments across India..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
