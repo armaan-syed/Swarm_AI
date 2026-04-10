@@ -11,12 +11,14 @@ import { SettingsButton } from "./components/SettingsButton";
 import { SettingsSidebar } from "./components/SettingsSidebar";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { usePipelineRun } from "@/lib/hooks/usePipelineRun";
+import { usePolicyChanges } from "@/lib/hooks/usePolicyChanges";
 import { mockDashboardData } from "@/lib/mockData";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { company, isHydrated } = useCompany();
   const { state, runPipeline } = usePipelineRun();
+  const { changes, isLoading: changesLoading, checkForChanges } = usePolicyChanges();
 
   useEffect(() => {
     if (isHydrated && !company) {
@@ -72,6 +74,45 @@ export default function DashboardPage() {
             >
               {state.status === "running" ? "PIPELINE RUNNING..." : "RUN COMPLIANCE CHECK →"}
             </Button>
+          </div>
+
+          {/* Policy Changes Alert */}
+          <div className="px-2">
+            <Card variant="accent-yellow" className="!p-4">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-heading font-black text-lg uppercase">Policy Changes Monitor</h3>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={checkForChanges}
+                  disabled={changesLoading}
+                >
+                  {changesLoading ? "CHECKING..." : "CHECK NOW"}
+                </Button>
+              </div>
+              {changes.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="font-mono text-sm text-[#0A0A0A]">
+                    🚨 {changes.length} new RBI policy change(s) detected!
+                  </p>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {changes.slice(0, 3).map((change, i) => (
+                      <div key={i} className="font-mono text-xs bg-white p-2 border border-[#0A0A0A]">
+                        <div className="font-bold">{change.title}</div>
+                        <div className="text-gray-600">{change.published_date}</div>
+                      </div>
+                    ))}
+                    {changes.length > 3 && (
+                      <p className="text-xs text-gray-600">...and {changes.length - 3} more</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="font-mono text-sm text-[#3D3D3D]">
+                  No new policy changes detected. Monitoring RBI website...
+                </p>
+              )}
+            </Card>
           </div>
 
           <div className="flex-1 overflow-y-auto pr-4 flex flex-col gap-5 pb-10">

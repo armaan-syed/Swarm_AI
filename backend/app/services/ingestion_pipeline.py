@@ -163,7 +163,7 @@ class IngestionPipeline:
             return {
                 "company_id": company_id,
                 "filename": filename,
-                "chunks": len(chunks),
+                "chunks": estimated_chunks,
                 "doc_hash": doc_hash,
                 "status": "db_insert_failed",
                 "error": str(exc),
@@ -173,14 +173,14 @@ class IngestionPipeline:
         logger.info(
             "Document ingestion %s: %d chunks, hash=%s",
             status,
-            len(chunks),
+            estimated_chunks,
             doc_hash[:12],
         )
 
         return {
             "company_id": company_id,
             "filename": filename,
-            "chunks": len(chunks),
+            "chunks": estimated_chunks,
             "doc_hash": doc_hash,
             "status": status,
         }

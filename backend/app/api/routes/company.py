@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, Depends
 
 from app.api.deps import get_current_user_optional
+from app.db.supabase_client import get_supabase
 from app.models.company_schemas import CompanyCreate, CompanyUpdate, CompanyOut
 from app.services.company_service import (
     create_company,
@@ -70,3 +71,59 @@ async def delete_existing_company(
     success = await delete_company(company_id)
     if not success:
         raise HTTPException(status_code=404, detail="Company not found")
+
+
+@router.get("/{company_id}/documents")
+async def list_company_documents(
+    company_id: str,
+    user: dict | None = Depends(get_current_user_optional),
+) -> list[dict]:
+    """List uploaded documents for a company."""
+    client = get_supabase()
+    if not client:
+        return []
+    try:
+        res = (
+            client.table("company_documents")
+            .select("id, company_id, filename, doc_hash, created_at")
+            .eq("company_id", company_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to fetch documents: {exc}") from exc
+
+    rows = res.data or []
+    return [
+        {
+            "id": row.get("id"),
+            "company_id": row.get("company_id"),
+            "filename": row.get("filename"),
+            "doc_hash": row.get("doc_hash"),
+            "ingested_at": row.get("created_at"),
+        }
+        for row in rows
+    ]
+
+
+@router.delete("/{company_id}/documents/{doc_id}", status_code=204)
+async def delete_company_document(
+    company_id: str,
+    doc_id: str,
+    user: dict | None = Depends(get_current_user_optional),
+) -> None:
+    """Delete an uploaded company document metadata row."""
+    client = get_supabase()
+    if not client:
+        raise HTTPException(status_code=503, detail="DB unavailable")
+
+    res = (
+        client.table("company_documents")
+        .delete()
+        .eq("id", doc_id)
+        .eq("company_id", company_id)
+        .execute()
+    )
+
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Document not found")

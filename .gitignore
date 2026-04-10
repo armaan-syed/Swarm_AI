@@ -95,3 +95,11 @@ logs/
 tmp/
 temp/
 .cache/
+
+# Chroma DB / vector store
+backend/chroma_store/
+*.bin
+
+# Optional (better)
+*.sqlite3
+*.db

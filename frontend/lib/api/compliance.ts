@@ -17,6 +17,19 @@ export async function runOne(url: string, source = "RBI"): Promise<unknown> {
   return apiClient.post("/compliance/run-one", { url, source });
 }
 
+export async function checkPolicyChanges(): Promise<{
+  new_changes: number;
+  changes: Array<{
+    source: string;
+    title: string;
+    url: string;
+    published_date: string | null;
+    doc_type: string | null;
+  }>;
+}> {
+  return apiClient.post("/compliance/check-policy-changes");
+}
+
 export async function listReports(
   limit = 20,
   severity?: string

@@ -78,6 +78,31 @@ async def upload_company_document(
     return {"success": True, "result": result}
 
 
+@router.post("/check-policy-changes")
+async def check_policy_changes() -> dict:
+    """Check for new policy changes from RBI and return them."""
+    from app.agents.rbi.source_monitor import SourceMonitorAgent
+
+    agent = SourceMonitorAgent()
+    new_refs = await agent.run(sources=["RBI"])
+
+    # Convert to response format
+    changes = []
+    for ref in new_refs:
+        changes.append({
+            "source": ref.source,
+            "title": ref.title,
+            "url": ref.url,
+            "published_date": ref.published_date,
+            "doc_type": ref.doc_type,
+        })
+
+    return {
+        "new_changes": len(changes),
+        "changes": changes,
+    }
+
+
 # ── Data reads ─────────────────────────────────────────────────────────────────
 
 @router.get("/circulars", response_model=list[CircularOut])
