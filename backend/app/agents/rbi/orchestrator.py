@@ -185,9 +185,10 @@ class RBIOrchestrator:
     ) -> None:
         client = get_supabase()
         if not client:
+            logger.error("Supabase client missing - skipping persistence")
             return
         try:
-            # Get current version
+            # 1. Update/Insert Circular
             res = (
                 client.table("circulars")
                 .select("version")
@@ -212,7 +213,7 @@ class RBIOrchestrator:
                 on_conflict="url",
             ).execute()
 
-            # Build impact report row with validation fields
+            # 2. Insert Impact Report
             report_row = {
                 "circular_url": new_doc.ref.url,
                 "summary": change_report.summary,
@@ -229,5 +230,7 @@ class RBIOrchestrator:
                 report_row["validation_issues"] = validation.issues
 
             client.table("impact_reports").insert(report_row).execute()
+            logger.info("Successfully persisted circular and report for %s", new_doc.ref.url)
+            
         except Exception as exc:  # noqa: BLE001
-            logger.exception("Persist failed for %s", new_doc.ref.url)
+            logger.error("Persist failed for %s: %s", new_doc.ref.url, exc, exc_info=True)

@@ -25,6 +25,17 @@ class UserOut(BaseModel):
     email: str
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOut
+
+
 class QueryRequest(BaseModel):
     """Natural-language compliance question."""
     query: str = Field(..., description="The question to ask")

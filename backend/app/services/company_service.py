@@ -8,16 +8,18 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# In-memory fallback for development without Supabase
-_companies_cache: dict[str, dict] = {}
+# No in-memory fallback allowed for production/persistence
+# _companies_cache: dict[str, dict] = {}
 
 
 async def create_company(payload: CompanyCreate) -> CompanyOut:
     """Create a new company."""
     client = get_supabase()
+    if not client:
+        raise RuntimeError("Supabase client not initialized. Check your environment variables.")
     
     company_id = str(uuid.uuid4())
-    now = datetime.utcnow()
+    now = datetime.utcnow().isoformat()
     
     company_data = {
         "id": company_id,
@@ -28,38 +30,28 @@ async def create_company(payload: CompanyCreate) -> CompanyOut:
         "updated_at": now,
     }
     
-    if client:
-        try:
-            response = client.table("companies").insert(company_data).execute()
-            if response.data:
-                return CompanyOut(**response.data[0])
-            return CompanyOut(**company_data)
-        except Exception as exc:
-            logger.error(f"Error creating company in Supabase: {exc}")
-            # Fall back to in-memory
-            _companies_cache[company_id] = company_data
-            return CompanyOut(**company_data)
-    else:
-        # No Supabase, use in-memory
-        _companies_cache[company_id] = company_data
-        return CompanyOut(**company_data)
+    try:
+        response = client.table("companies").insert(company_data).execute()
+        if response.data:
+            return CompanyOut(**response.data[0])
+        raise RuntimeError("Failed to insert company: No data returned")
+    except Exception as exc:
+        logger.error(f"Error creating company in Supabase: {exc}")
+        raise
 
 
 async def get_company(company_id: str) -> Optional[CompanyOut]:
     """Fetch a single company by ID."""
     client = get_supabase()
+    if not client:
+        return None
     
-    if client:
-        try:
-            response = client.table("companies").select("*").eq("id", company_id).execute()
-            if response.data:
-                return CompanyOut(**response.data[0])
-        except Exception as exc:
-            logger.error(f"Error fetching company from Supabase: {exc}")
-    
-    # Fall back to in-memory
-    if company_id in _companies_cache:
-        return CompanyOut(**_companies_cache[company_id])
+    try:
+        response = client.table("companies").select("*").eq("id", company_id).execute()
+        if response.data:
+            return CompanyOut(**response.data[0])
+    except Exception as exc:
+        logger.error(f"Error fetching company from Supabase: {exc}")
     
     return None
 
@@ -67,29 +59,28 @@ async def get_company(company_id: str) -> Optional[CompanyOut]:
 async def list_companies(limit: int = 10, offset: int = 0) -> list[CompanyOut]:
     """List all companies with pagination."""
     client = get_supabase()
+    if not client:
+        return []
     
-    if client:
-        try:
-            response = (
-                client.table("companies")
-                .select("*")
-                .order("created_at", desc=True)
-                .range(offset, offset + limit - 1)
-                .execute()
-            )
-            return [CompanyOut(**row) for row in response.data]
-        except Exception as exc:
-            logger.error(f"Error listing companies from Supabase: {exc}")
-    
-    # Fall back to in-memory
-    companies = list(_companies_cache.values())
-    companies.sort(key=lambda x: x["created_at"], reverse=True)
-    return [CompanyOut(**row) for row in companies[offset : offset + limit]]
+    try:
+        response = (
+            client.table("companies")
+            .select("*")
+            .order("created_at", desc=True)
+            .range(offset, offset + limit - 1)
+            .execute()
+        )
+        return [CompanyOut(**row) for row in response.data]
+    except Exception as exc:
+        logger.error(f"Error listing companies from Supabase: {exc}")
+        return []
 
 
 async def update_company(company_id: str, payload: CompanyUpdate) -> Optional[CompanyOut]:
     """Update a company."""
     client = get_supabase()
+    if not client:
+        raise RuntimeError("Supabase client not initialized")
     
     # Prepare update data (only non-None fields)
     update_data = {}
@@ -101,28 +92,22 @@ async def update_company(company_id: str, payload: CompanyUpdate) -> Optional[Co
         update_data["product_description"] = payload.product_description
     
     if not update_data:
-        # Nothing to update
         return await get_company(company_id)
     
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = datetime.utcnow().isoformat()
     
-    if client:
-        try:
-            response = (
-                client.table("companies")
-                .update(update_data)
-                .eq("id", company_id)
-                .execute()
-            )
-            if response.data:
-                return CompanyOut(**response.data[0])
-        except Exception as exc:
-            logger.error(f"Error updating company in Supabase: {exc}")
-    
-    # Fall back to in-memory
-    if company_id in _companies_cache:
-        _companies_cache[company_id].update(update_data)
-        return CompanyOut(**_companies_cache[company_id])
+    try:
+        response = (
+            client.table("companies")
+            .update(update_data)
+            .eq("id", company_id)
+            .execute()
+        )
+        if response.data:
+            return CompanyOut(**response.data[0])
+    except Exception as exc:
+        logger.error(f"Error updating company in Supabase: {exc}")
+        raise
     
     return None
 
@@ -130,20 +115,15 @@ async def update_company(company_id: str, payload: CompanyUpdate) -> Optional[Co
 async def delete_company(company_id: str) -> bool:
     """Delete a company."""
     client = get_supabase()
+    if not client:
+        return False
     
-    if client:
-        try:
-            response = client.table("companies").delete().eq("id", company_id).execute()
-            return True
-        except Exception as exc:
-            logger.error(f"Error deleting company from Supabase: {exc}")
-    
-    # Fall back to in-memory
-    if company_id in _companies_cache:
-        del _companies_cache[company_id]
+    try:
+        client.table("companies").delete().eq("id", company_id).execute()
         return True
-    
-    return False
+    except Exception as exc:
+        logger.error(f"Error deleting company from Supabase: {exc}")
+        return False
 
 
 async def get_company_context(company_id: str) -> Optional[CompanyContext]:

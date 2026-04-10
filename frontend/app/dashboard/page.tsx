@@ -15,11 +15,16 @@ import { mockDashboardData } from "@/lib/mockData";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { company } = useCompany();
+  const { company, isHydrated } = useCompany();
   const { state, runPipeline } = usePipelineRun();
 
-  if (!company) {
-    router.push("/onboarding/company");
+  useEffect(() => {
+    if (isHydrated && !company) {
+      router.push("/onboarding/company");
+    }
+  }, [company, router, isHydrated]);
+
+  if (!isHydrated || !company) {
     return null;
   }
 

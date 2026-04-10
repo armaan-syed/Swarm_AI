@@ -130,19 +130,36 @@ class IngestionPipeline:
             metadatas=metadatas,
         )
 
-        # 6. Optionally store metadata in Supabase
+        # 6. Store metadata in Supabase (MANDATORY for persistence tracking)
         client = get_supabase()
-        if client:
-            try:
-                client.table("company_documents").insert(
-                    {
-                        "company_id": company_id,
-                        "filename": filename,
-                        "doc_hash": doc_hash,
-                    }
-                ).execute()
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Failed to persist doc metadata to Supabase: %s", exc)
+        if not client:
+            logger.error("Supabase client missing during document ingestion!")
+            return {
+                "company_id": company_id,
+                "filename": filename,
+                "chunks": len(chunks),
+                "doc_hash": doc_hash,
+                "status": "db_unavailable",
+            }
+            
+        try:
+            client.table("company_documents").insert(
+                {
+                    "company_id": company_id,
+                    "filename": filename,
+                    "doc_hash": doc_hash,
+                }
+            ).execute()
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to persist doc metadata to Supabase: %s", exc)
+            return {
+                "company_id": company_id,
+                "filename": filename,
+                "chunks": len(chunks),
+                "doc_hash": doc_hash,
+                "status": "db_insert_failed",
+                "error": str(exc),
+            }
 
         status = "ingested" if success else "chroma_failed"
         logger.info(

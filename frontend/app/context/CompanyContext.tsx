@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { CompanyOut, DocumentOut } from "@/app/types/api";
 
 interface CompanyContextType {
@@ -11,17 +11,26 @@ interface CompanyContextType {
   removeDocument: (docId: string) => void;
   setDocuments: (docs: DocumentOut[]) => void;
   hasUploaded: boolean;
+  isHydrated: boolean;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const [company, setCompany] = useState<CompanyOut | null>(() => {
-    // Hydrate from localStorage
-    if (typeof window === "undefined") return null;
+  const [company, setCompany] = useState<CompanyOut | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
     const stored = localStorage.getItem("compliance_company");
-    return stored ? JSON.parse(stored) : null;
-  });
+    if (stored) {
+      try {
+        setCompany(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse company from local storage", e);
+      }
+    }
+    setIsHydrated(true);
+  }, []);
 
   const [documents, setDocuments] = useState<DocumentOut[]>([]);
 
@@ -55,6 +64,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         removeDocument,
         setDocuments,
         hasUploaded: documents.length > 0,
+        isHydrated,
       }}
     >
       {children}

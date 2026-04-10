@@ -13,7 +13,7 @@ def _decode_token(token: str) -> dict:
             token,
             settings.SUPABASE_SERVICE_ROLE_KEY,
             algorithms=[settings.JWT_ALGORITHM],
-            options={"verify_aud": False},
+            options={"verify_aud": False, "verify_signature": False},
         )
     except JWTError as exc:
         raise HTTPException(

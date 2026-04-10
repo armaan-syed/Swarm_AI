@@ -2,7 +2,7 @@ import { apiClient, setToken, clearToken } from "./client";
 import { AuthResponse, UserOut, LoginRequest } from "@/app/types/api";
 
 // TODO(backend): Supabase auth endpoints — mock responses until backend ships
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
   if (USE_MOCK) {
@@ -13,6 +13,9 @@ export async function login(email: string, password: string): Promise<AuthRespon
       user: { id: "mock-user-1", email },
     };
     setToken(mock.access_token);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("mock_user_email", email);
+    }
     return mock;
   }
   const res = await apiClient.post<AuthResponse>("/auth/login", { email, password } as LoginRequest);
@@ -28,6 +31,9 @@ export async function signup(email: string, password: string): Promise<AuthRespo
       user: { id: `mock-user-${Date.now()}`, email },
     };
     setToken(mock.access_token);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("mock_user_email", email);
+    }
     return mock;
   }
   const res = await apiClient.post<AuthResponse>("/auth/signup", { email, password });
@@ -37,7 +43,8 @@ export async function signup(email: string, password: string): Promise<AuthRespo
 
 export async function getMe(): Promise<UserOut> {
   if (USE_MOCK) {
-    return { id: "mock-user-1", email: "user@company.com" };
+    const email = typeof window !== "undefined" ? localStorage.getItem("mock_user_email") || "user@company.com" : "user@company.com";
+    return { id: "mock-user-1", email };
   }
   return apiClient.get<UserOut>("/auth/me");
 }
@@ -46,5 +53,6 @@ export function logout(): void {
   clearToken();
   if (typeof window !== "undefined") {
     localStorage.removeItem("compliance_company_id");
+    localStorage.removeItem("mock_user_email");
   }
 }
