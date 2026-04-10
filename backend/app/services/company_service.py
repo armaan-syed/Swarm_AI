@@ -137,3 +137,15 @@ async def get_company_context(company_id: str) -> Optional[CompanyContext]:
             product_description=company.product_description,
         )
     return None
+
+async def get_company_documents(company_id: str) -> list[dict]:
+    """Fetch all indexed documents for a specific company."""
+    client = get_supabase()
+    if not client:
+        return []
+    try:
+        response = client.table("company_documents").select("*").eq("company_id", company_id).execute()
+        return response.data or []
+    except Exception as exc:
+        logger.error(f"Error fetching company documents: {exc}")
+        return []

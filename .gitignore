@@ -95,3 +95,22 @@ logs/
 tmp/
 temp/
 .cache/
+
+# ---------- Project-specific ----------
+# ChromaDB vector store (generated locally)
+chroma_store/
+
+# Gemini AI workspace
+.gemini/
+
+# Scratch test scripts
+backend/api_test.py
+backend/backend_test.py
+backend/backend_test_orch.py
+backend/test_auth.py
+backend/test_auth_api.py
+backend/test_pipeline.py
+backend/test_rbi_scrape.py
+backend/test_upload.py
+backend/verify_auth.py
+backend/verify_ingestion.py

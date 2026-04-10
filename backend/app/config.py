@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Auth
     JWT_ALGORITHM: str = "HS256"
 
+    # Email (Resend)
+    RESEND_API_KEY: str = ""
+
     # Scheduler (RBI/SEBI/MCA source monitoring)
     SCHEDULER_ENABLED: bool = True
     MONITOR_INTERVAL_HOURS: int = 10

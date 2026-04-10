@@ -70,3 +70,12 @@ async def delete_existing_company(
     success = await delete_company(company_id)
     if not success:
         raise HTTPException(status_code=404, detail="Company not found")
+@router.get("/{company_id}/documents")
+async def fetch_company_documents(
+    company_id: str,
+    user: dict | None = Depends(get_current_user_optional),
+) -> list[dict]:
+    """Get all documents uploaded for a specific company."""
+    from app.services.company_service import get_company_documents
+    docs = await get_company_documents(company_id)
+    return docs

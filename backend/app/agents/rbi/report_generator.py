@@ -19,12 +19,25 @@ from app.agents.base import BaseAgent
 from app.agents.rbi.change_detector import ChangeReport
 from app.agents.rbi.impact_mapper import ImpactMap
 
-REPORT_SYSTEM = """You are an Ultra-Speed Compliance Analyst. 
-CORE REQUIREMENTS:
-- BE EXTREMELY CONCISE. One-sentence bullets only.
-- Cite exact clause numbers (Clause 3.2).
-- Focus only on required changes.
-- Output strictly in Markdown.
+REPORT_SYSTEM = """You are a Speed Analyst. PRECISE & TERSE. 
+
+GOAL: Generate 3 Action Items and 3 Emails in <30 seconds.
+
+RULES:
+1. MAX 1 sentence per bullet.
+2. Direct Clause citations (e.g. Cl 3.2).
+3. PERSONNEL ASSIGNMENT (G->P):
+   - John Philji (johnphilji2007@gmail.com) - Strategy
+   - Chris Fernandes (chriscric17@gmail.com) - Operations
+   - Armaan Syed (armaansyed009@gmail.com) - Risk
+4. OUTPUT: Markdown report, then a hidden JSON block (<!-- JSON: ... -->) for email drafts.
+
+JSON FORMAT:
+{
+  "email_drafts": [
+    {"to": "email", "subject": "Subject", "body": "Terse body..."}
+  ]
+}
 """
 
 
@@ -36,6 +49,7 @@ class ValidatedReport:
     action_items: list[str]
     grounded: bool
     overall_severity: str
+    email_drafts: list[dict[str, str]] = field(default_factory=list)
     generated_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -53,8 +67,8 @@ class ReportGeneratorAgent(BaseAgent):
         overall_severity = impact_map.overall_severity if impact_map else "PENDING EVALUATION"
         clause_payload = self._build_clause_payload(change_report, impact_map)
 
-        # Get RAG context for better report generation
-        rag_context = await self._get_rag_context(change_report, company_context)
+        # TURBO MODE: Bypass RAG context to save 5-8s
+        rag_context = ""
 
         # Optional company context header
         context_line = ""
@@ -97,6 +111,7 @@ class ReportGeneratorAgent(BaseAgent):
         teams = sorted({d for item in impact_map.items for d in item.departments}) if impact_map else []
         action_items = self._extract_action_items(markdown)
         grounded = self._validate_grounding(citations, change_report)
+        email_drafts = self._extract_email_drafts(markdown)
 
         return ValidatedReport(
             markdown=markdown,
@@ -105,6 +120,7 @@ class ReportGeneratorAgent(BaseAgent):
             action_items=action_items,
             grounded=grounded,
             overall_severity=impact_map.overall_severity,
+            email_drafts=email_drafts,
             metadata={
                 "source": change_report.new_doc.ref.source,
                 "title": change_report.new_doc.ref.title,
@@ -112,6 +128,18 @@ class ReportGeneratorAgent(BaseAgent):
                 "summary_stats": change_report.summary,
             },
         )
+
+    def _extract_email_drafts(self, markdown: str) -> list[dict[str, str]]:
+        import json
+        import re
+        try:
+            match = re.search(r"<!-- JSON:\s*({.*?})\s*-->", markdown, re.DOTALL)
+            if match:
+                data = json.loads(match.group(1))
+                return data.get("email_drafts", [])
+        except Exception:
+            pass
+        return []
 
     # ------------------------------------------------------------------
     def _build_clause_payload(

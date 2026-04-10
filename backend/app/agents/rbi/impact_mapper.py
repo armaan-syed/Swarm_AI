@@ -75,10 +75,10 @@ class ImpactMapperAgent(BaseAgent):
         import asyncio
         
         # Throttling semaphore to prevent overloading local Ollama
-        semaphore = asyncio.Semaphore(2)
+        semaphore = asyncio.Semaphore(4) # Increased from 2 for better scaling
         
-        # Limit analysis to Top 10 changes for high-speed demo performance
-        active_changes = [c for c in change_report.changes if c.change_type != "unchanged"][:10]
+        # TURBO MODE: Limit analysis to Top 3 changes for <30s demo performance
+        active_changes = [c for c in change_report.changes if c.change_type != "unchanged"][:3]
         
         async def throttled_analyze(change):
             async with semaphore:
@@ -96,11 +96,9 @@ class ImpactMapperAgent(BaseAgent):
 
     # ------------------------------------------------------------------
     async def _analyze_change(self, change: ClauseChange, company_context=None) -> ClauseImpact:
-        text = change.new_text or change.old_text or ""
-        similar = await self._find_similar(text, company_context)
-
-        # Get RAG context for better analysis
-        rag_context = await self._get_rag_context(text, company_context)
+        # TURBO MODE: Bypass RAG and similar search to save 15s+
+        similar = []
+        rag_context = ""
         departments = self._guess_departments(text)
 
         # Build system prompt with optional company context and RAG context

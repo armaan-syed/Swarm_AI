@@ -30,6 +30,10 @@ export async function getReport(id: string): Promise<ImpactReportOut> {
   return apiClient.get<ImpactReportOut>(`/compliance/reports/${id}`);
 }
 
+export async function getReportHistory(): Promise<ImpactReportOut[]> {
+  return apiClient.get<ImpactReportOut[]>("/compliance/reports/history");
+}
+
 export async function listCirculars(
   source?: string,
   limit = 20

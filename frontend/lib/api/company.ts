@@ -5,6 +5,7 @@ import {
   CompanyOut,
   DocumentOut,
   IngestResult,
+  DepartmentContact,
 } from "@/app/types/api";
 
 export async function createCompany(data: CompanyCreate): Promise<CompanyOut> {
@@ -39,4 +40,12 @@ export async function uploadDocument(
   form.append("company_id", companyId);
   form.append("file", file);
   return apiClient.post<IngestResult>("/compliance/documents/upload", form);
+}
+
+export async function listDepartments(companyId: string): Promise<DepartmentContact[]> {
+  return apiClient.get<DepartmentContact[]>(`/departments/${companyId}`);
+}
+
+export async function addDepartment(data: DepartmentContact): Promise<DepartmentContact> {
+  return apiClient.post<DepartmentContact>("/departments", data);
 }

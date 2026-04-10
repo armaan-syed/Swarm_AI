@@ -133,5 +133,14 @@ export function usePipelineRun() {
     []
   );
 
-  return { state, runPipeline };
+  const loadReport = useCallback((report: any) => {
+    setState((prev) => ({
+      ...prev,
+      report: report,
+      status: "done",
+      agents: prev.agents.map((a) => ({ ...a, phase: "success" })),
+    }));
+  }, []);
+
+  return { state, runPipeline, loadReport };
 }

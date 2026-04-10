@@ -30,8 +30,22 @@ class IngestionPipeline:
     """Unified ingestion entry point."""
 
     def __init__(self) -> None:
-        self.rbi = RBIOrchestrator()
-        self.vector_store = get_vector_store()
+        # Lazy initialization to prevent blocking the request thread
+        self._rbi: Optional[RBIOrchestrator] = None
+        self._vector_store: Optional[Any] = None
+
+    @property
+    def rbi(self) -> RBIOrchestrator:
+        if self._rbi is None:
+            from app.agents.rbi.orchestrator import RBIOrchestrator
+            self._rbi = RBIOrchestrator()
+        return self._rbi
+
+    @property
+    def vector_store(self) -> Any:
+        if self._vector_store is None:
+            self._vector_store = get_vector_store()
+        return self._vector_store
 
     # ------------------------------------------------------------------
     # Flow 1: Regulatory (delegates to RBI orchestrator)

@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useCompany } from "@/lib/hooks/useCompany";
 import * as companyApi from "@/lib/api/company";
 import { useCompanyDocuments } from "@/lib/hooks/useCompanyDocuments";
+import { useDepartments } from "@/lib/hooks/useDepartments";
 
 export function SettingsSidebar() {
   const { settingsOpen, closeSettings } = useUi();
@@ -28,6 +29,13 @@ export function SettingsSidebar() {
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const { documents: fetchedDocs, uploadDocument, deleteDocument: deleteRemoteDoc } = useCompanyDocuments(company?.id);
+  const { departments, addDept, isLoading: isLoadingDepts } = useDepartments(company?.id);
+
+  const [newDeptName, setNewDeptName] = useState("");
+  const [newDeptEmail, setNewDeptEmail] = useState("");
+  const [newDeptDesc, setNewDeptDesc] = useState("");
+  const [showAddDept, setShowAddDept] = useState(false);
+  const [isAddingDept, setIsAddingDept] = useState(false);
 
   useEffect(() => {
     if (company) {
@@ -270,6 +278,85 @@ export function SettingsSidebar() {
                 className="hidden"
               />
             </label>
+          </div>
+
+          {/* Team Swarm Section */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <h3 className="font-label font-bold uppercase tracking-wider text-sm">Team Intelligence</h3>
+              <button 
+                onClick={() => setShowAddDept(!showAddDept)}
+                className="w-6 h-6 bg-[#BFFF00] border-2 border-black flex items-center justify-center font-black shadow-[2px_2px_0px_#0A0A0A] hover:-translate-y-0.5 transition-all text-xs"
+              >
+                {showAddDept ? "✕" : "+"}
+              </button>
+            </div>
+
+            {showAddDept && (
+              <Card className="!p-3 border-dashed bg-white">
+                <div className="flex flex-col gap-3">
+                  <Input 
+                    label="Department Name" 
+                    placeholder="e.g. Legal, HR" 
+                    value={newDeptName}
+                    onChange={(e) => setNewDeptName(e.target.value)}
+                  />
+                  <Input 
+                    label="Recipient Email" 
+                    placeholder="e.g. name@company.com" 
+                    value={newDeptEmail}
+                    onChange={(e) => setNewDeptEmail(e.target.value)}
+                  />
+                  <Input 
+                    label="Role Description" 
+                    placeholder="e.g. Operations Manager" 
+                    value={newDeptDesc}
+                    onChange={(e) => setNewDeptDesc(e.target.value)}
+                  />
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    disabled={isAddingDept || !newDeptName || !newDeptEmail}
+                    onClick={async () => {
+                      setIsAddingDept(true);
+                      try {
+                        await addDept({ 
+                          name: newDeptName, 
+                          contact_email: newDeptEmail, 
+                          description: newDeptDesc,
+                          contact_name: newDeptName 
+                        });
+                        setNewDeptName("");
+                        setNewDeptEmail("");
+                        setNewDeptDesc("");
+                        setShowAddDept(false);
+                      } finally {
+                        setIsAddingDept(false);
+                      }
+                    }}
+                  >
+                    {isAddingDept ? "Adding..." : "Add to Team Swarm"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            <div className="flex flex-col gap-2 max-h-[250px] overflow-y-auto pr-1">
+              {departments.map((dept, i) => (
+                <div key={i} className="bg-white border-2 border-black p-2 shadow-[3px_3px_0px_#0A0A0A] flex flex-col gap-1">
+                  <div className="flex justify-between items-start">
+                    <span className="font-heading font-black text-[10px] uppercase tracking-tighter bg-black text-white px-1">
+                      {dept.name}
+                    </span>
+                    <Badge variant="default" className="text-[8px] py-0">{dept.contact_name || 'Member'}</Badge>
+                  </div>
+                  <p className="font-mono text-[9px] text-[#555] truncate">{dept.contact_email}</p>
+                </div>
+              ))}
+              {departments.length === 0 && !isLoadingDepts && (
+                <p className="font-mono text-xs text-[#888] italic">No team members assigned.</p>
+              )}
+            </div>
           </div>
 
           {/* Account Section */}

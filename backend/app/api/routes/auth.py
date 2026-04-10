@@ -36,44 +36,36 @@ async def signup(payload: LoginRequest) -> AuthResponse:
         raise HTTPException(status_code=503, detail="Authentication service unavailable")
     
     try:
-        # 1. Create and auto-verify user via Admin API
+        # 1. Attempt to create and auto-verify user via Admin API
         # This bypasses the email confirmation requirement for the demo
-        admin_client.auth.admin.create_user({
-            "email": payload.email,
-            "password": payload.password,
-            "email_confirm": True
-        })
+        try:
+            admin_client.auth.admin.create_user({
+                "email": payload.email,
+                "password": payload.password,
+                "email_confirm": True
+            })
+        except Exception as e:
+            # If user already exists, we ignore and proceed to login
+            if "already registered" not in str(e).lower():
+                raise HTTPException(status_code=400, detail=str(e))
         
-        # 2. Log in immediately after creation to get a session
+        # 2. Log in immediately
         res = auth_client.auth.sign_in_with_password({
             "email": payload.email, 
             "password": payload.password
         })
         
         if not res.user or not res.session:
-            raise HTTPException(status_code=400, detail="Signup succeeded but session creation failed.")
+            raise HTTPException(status_code=401, detail="Invalid credentials or session failed.")
             
         return AuthResponse(
             access_token=res.session.access_token,
             token_type=res.session.token_type,
             user=UserOut(id=res.user.id, email=res.user.email)
         )
+    except HTTPException:
+        raise
     except Exception as e:
-        # If user already exists, try to log them in directly
-        if "already registered" in str(e).lower():
-            try:
-                res = auth_client.auth.sign_in_with_password({
-                    "email": payload.email, 
-                    "password": payload.password
-                })
-                if res.user and res.session:
-                    return AuthResponse(
-                        access_token=res.session.access_token,
-                        token_type=res.session.token_type,
-                        user=UserOut(id=res.user.id, email=res.user.email)
-                    )
-            except Exception:
-                pass
         raise HTTPException(status_code=400, detail=str(e))
 
 

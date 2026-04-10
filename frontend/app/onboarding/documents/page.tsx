@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { StepIndicator } from "@/components/StepIndicator";
@@ -22,10 +22,11 @@ export default function OnboardingDocumentsPage() {
   const { company, addDocument } = useCompany();
   const router = useRouter();
 
-  if (!company) {
-    router.push("/onboarding/company");
-    return null;
-  }
+  useEffect(() => {
+    if (!company) {
+      router.push("/onboarding/company");
+    }
+  }, [company, router]);
 
   const handleFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -60,17 +61,22 @@ export default function OnboardingDocumentsPage() {
     setError("");
 
     try {
-      for (const file of filesToUpload) {
-        await companyApi.uploadDocument(company.id, file);
-        addDocument({
-          id: `doc-${Date.now()}-${Math.random()}`,
-          company_id: company.id,
-          filename: file.name,
-          doc_hash: `hash-${Date.now()}`,
-          ingested_at: new Date().toISOString(),
-        });
-      }
-      router.push("/dashboard");
+      // Parallelize uploads for 'Ludicrous Speed' ingestion
+      await Promise.all(
+        filesToUpload.map(async (file) => {
+          await companyApi.uploadDocument(company.id, file);
+          addDocument({
+            id: `doc-${Date.now()}-${Math.random()}`,
+            company_id: company.id,
+            filename: file.name,
+            doc_hash: `indexing`,
+            ingested_at: new Date().toISOString(),
+          });
+        })
+      );
+      
+      // Navigate immediately
+      router.push("/dashboard?status=indexing");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed";
       setError(msg);

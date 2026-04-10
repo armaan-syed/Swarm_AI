@@ -56,12 +56,13 @@ async def run_pipeline_background(
     return {"message": "Pipeline started in background"}
 
 
-@router.post("/documents/upload")
+@router.post("/documents/upload", status_code=202)
 async def upload_company_document(
+    bg_tasks: BackgroundTasks,
     company_id: str = Form(...),
     file: UploadFile = File(...),
 ) -> dict:
-    """Upload a company document (PDF/HTML/text) for embedding into ChromaDB."""
+    """Upload a company document (PDF/HTML/text) for embedding into ChromaDB in background."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
@@ -69,13 +70,19 @@ async def upload_company_document(
     if not raw_bytes:
         raise HTTPException(status_code=400, detail="Empty file")
 
-    pipeline = IngestionPipeline()
-    result = await pipeline.ingest_company_document(
-        company_id=company_id,
-        filename=file.filename,
-        raw_bytes=raw_bytes,
-    )
-    return {"success": True, "result": result}
+    # DEFENSIVE SPEED: Hand off to background task *before* doing any AI init
+    def _run_ingest(c_id, f_name, data):
+        pipeline = IngestionPipeline()
+        import asyncio
+        asyncio.run(pipeline.ingest_company_document(c_id, f_name, data))
+
+    bg_tasks.add_task(_run_ingest, company_id, file.filename, raw_bytes)
+    
+    return {
+        "success": True, 
+        "message": "File received. Indexing started in background.",
+        "filename": file.filename
+    }
 
 
 # ── Data reads ─────────────────────────────────────────────────────────────────
@@ -115,6 +122,16 @@ async def list_reports(
     if severity:
         query = query.eq("severity", severity.upper())
     res = query.range(offset, offset + limit - 1).execute()
+    return res.data or []
+
+
+@router.get("/reports/history")
+async def get_all_reports() -> list[ImpactReportOut]:
+    """Fetch all generated impact reports for the history audit trail."""
+    client = get_supabase()
+    if not client:
+        return []
+    res = client.table("impact_reports").select("*").order("created_at", desc=True).execute()
     return res.data or []
 
 

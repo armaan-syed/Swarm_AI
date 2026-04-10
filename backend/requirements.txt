@@ -56,6 +56,9 @@ rapidfuzz==3.11.0            # fuzzy clause matching
 
 # ============================================================
 
+# --- Email service ---
+resend>=0.9.0
+
 # --- Optional: background work / realtime ---
 # redis==5.2.0
 # celery==5.4.0

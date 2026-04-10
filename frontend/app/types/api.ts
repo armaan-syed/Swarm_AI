@@ -37,6 +37,15 @@ export interface CompanyOut {
   updated_at: string;
 }
 
+export interface DepartmentContact {
+  id?: string;
+  company_id: string;
+  name: string;
+  description?: string;
+  contact_name?: string;
+  contact_email: string;
+}
+
 // ── Documents ──────────────────────────────────────────────────────────────
 export interface DocumentOut {
   id: string;
@@ -74,6 +83,8 @@ export interface ReportOut {
   grounded: boolean;
   generated_at: string;
   overall_severity: string;
+  email_drafts?: any[];
+  metadata?: Record<string, any>;
 }
 
 export interface PipelineResultOut {

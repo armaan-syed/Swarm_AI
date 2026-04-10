@@ -5,7 +5,7 @@ import { CompanyProvider } from "./context/CompanyContext";
 import { UiProvider } from "./context/UiContext";
 
 export const metadata: Metadata = {
-  title: "Autonomous Compliance & Regulatory Intelligence System",
+  title: "Swarm AI | Autonomous Compliance Intelligence",
   description: "Real-time AI system actively analyzing regulations",
 };
 

@@ -34,11 +34,16 @@ export function Navbar() {
     <nav className="h-[64px] bg-[var(--color-neo-bg-base)] border-b-[3px] border-[var(--color-neo-border-default)] px-8 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-4">
         <div className="w-8 h-8 bg-[var(--color-neo-accent-blue)] border-2 border-[#0A0A0A] shadow-[2px_2px_0px_#0A0A0A] flex items-center justify-center">
-          <span className="font-heading font-black text-white text-xs">AC</span>
+          <span className="font-heading font-black text-white text-xs">SA</span>
         </div>
-        <h1 className="font-heading font-black uppercase text-xl hidden sm:block cursor-pointer" onClick={() => router.push("/")}>
-          Autonomous Compliance
-        </h1>
+        <div className="flex flex-col cursor-pointer" onClick={() => router.push("/")}>
+          <h1 className="font-heading font-black uppercase text-xl hidden sm:block leading-none">
+            Swarm AI
+          </h1>
+          <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-[#888] hidden sm:block">
+            Autonomous Compliance Intelligence
+          </span>
+        </div>
       </div>
       
       <div className="flex items-center gap-4">
