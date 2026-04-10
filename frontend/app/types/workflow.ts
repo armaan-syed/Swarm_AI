@@ -1,3 +1,5 @@
+import type { ReportOut, ValidationOut } from "./api";
+
 export type NodeStatus = "idle" | "running" | "success" | "error";
 export type AgentName =
   | "source_monitor"
@@ -53,7 +55,8 @@ export interface AgentNodeState {
 export interface PipelineState {
   status: "idle" | "running" | "done" | "error";
   agents: AgentNodeState[];
-  report: any | null;
-  validation: any | null;
+  report: ReportOut | null;
+  validation: ValidationOut | null;
   error: string | null;
 }
+

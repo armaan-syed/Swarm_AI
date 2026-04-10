@@ -68,10 +68,17 @@ class RBIOrchestrator:
             return result
 
         # 2-6. Process each new document
-        for ref in refs[:max_docs]:
+        # HACKATHON DEMO: Always cap at 1 document to ensure the presentation is fast and reliable.
+        demo_max_docs = 1 
+        for ref in refs[:demo_max_docs]:
             try:
-                report = await self._process_one(ref, company_context)
+                import asyncio
+                # Strict 120s timeout per document to ensure the UI eventually returns something
+                report = await asyncio.wait_for(self._process_one(ref, company_context), timeout=120.0)
                 result.reports.append(report)
+            except asyncio.TimeoutError:
+                logger.error("Pipeline timed out for %s", ref.url)
+                result.errors.append(f"{ref.url}: AI Reasoning Timeout (Local LLM too slow)")
             except Exception as exc:  # noqa: BLE001
                 logger.exception("Pipeline failed for %s", ref.url)
                 result.errors.append(f"{ref.url}: {exc}")
@@ -90,36 +97,45 @@ class RBIOrchestrator:
 
     # ------------------------------------------------------------------
     async def _process_one(self, ref: CircularRef, company_context=None) -> dict[str, Any]:
+        logger.info("[Agent 2] Extracting document: %s", ref.url)
         # 2. Extract
         new_doc = await self.extractor.run(ref)
+        logger.info("[Agent 2] Extraction complete. Clauses found: %d", len(new_doc.clauses))
 
         # Look up previous version (by source + title prefix)
         old_doc = await self._fetch_previous(ref)
 
         # 3. Detect changes
+        logger.info("[Agent 3] Detecting changes against previous versions...")
         change_report = await self.detector.run(new_doc, old_doc)
 
-        if change_report.is_duplicate:
-            return {
-                "ref": asdict(ref),
-                "summary": change_report.summary,
-                "severity": "none",
-                "report": None,
-                "validation": None,
-            }
+        # HACKATHON DEMO: Force pipeline to always map impact and generate a report, bypassing duplicate checks.
+        # if change_report.is_duplicate:
+        #     return {
+        #         "ref": asdict(ref),
+        #         "summary": change_report.summary,
+        #         "severity": "none",
+        #         "report": None,
+        #         "validation": None,
+        #     }
 
         # 4. Map impact (with company context)
+        logger.info("[Agent 4] Mapping impact for %d changes...", len(change_report.changes))
         impact_map = await self.mapper.run(change_report, company_context=company_context)
 
         # 5. Generate report (with company context)
+        logger.info("[Agent 5] Generating grounded compliance report...")
         report = await self.reporter.run(change_report, impact_map, company_context=company_context)
 
         # 6. Validate
+        logger.info("[Agent 6] Validating report for hallucinations/accuracy...")
         validation = await self.validator.run(change_report, impact_map, report)
 
         # Persist
+        logger.info("Persisting results to Supabase...")
         await self._persist(new_doc, change_report, impact_map, report, validation)
 
+        logger.info("Pipeline successfully completed for %s", ref.url)
         return {
             "ref": asdict(ref),
             "summary": change_report.summary,

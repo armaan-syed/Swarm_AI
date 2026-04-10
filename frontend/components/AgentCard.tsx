@@ -15,12 +15,12 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
-  const statusConfig = {
+  const statusConfig: Record<Agent["status"], { label: string; variant: React.ComponentProps<typeof Badge>["variant"]; icon: string }> = {
     completed: { label: "Completed", variant: "success", icon: "🟢" },
     running: { label: "Running", variant: "warning", icon: "🟡" },
     pending: { label: "Pending", variant: "default", icon: "⚪" },
     error: { label: "Needs Attention", variant: "error", icon: "🔴" }
-  } as const;
+  };
 
   const config = statusConfig[agent.status];
 
@@ -30,7 +30,7 @@ export function AgentCard({ agent }: AgentCardProps) {
         <h3 className="font-heading font-black text-lg uppercase tracking-tight">
           {agent.name}
         </h3>
-        <Badge variant={config.variant as any} className="gap-1 items-center">
+        <Badge variant={config.variant} className="gap-1 items-center">
           <span>{config.icon}</span>
           {config.label}
         </Badge>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { AgentName, PipelineState } from "@/app/types/workflow";
 import { PipelineRunOut } from "@/app/types/api";
 import * as complianceApi from "@/lib/api/compliance";
@@ -22,13 +22,7 @@ const AGENT_LABELS: Record<AgentName, string> = {
   report_generator: "Report Generator",
 };
 
-const AGENT_ICONS: Record<AgentName, string> = {
-  source_monitor: "🔍",
-  document_extractor: "📄",
-  change_detector: "🔄",
-  impact_mapper: "🗺️",
-  report_generator: "📋",
-};
+
 
 export function usePipelineRun() {
   const [state, setState] = useState<PipelineState>({
@@ -75,61 +69,37 @@ export function usePipelineRun() {
           return null;
         });
 
-      // Animate agent activation locally (1.2s per agent)
-      const agentTimings = AGENT_SEQUENCE.map((_, i) => i * 1200);
 
-      for (let i = 0; i < AGENT_SEQUENCE.length; i++) {
-        const agentName = AGENT_SEQUENCE[i];
 
-        // Start this agent
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+      // Set all agents to 'running' to show work has started
+      setState((prev) => ({
+        ...prev,
+        agents: prev.agents.map((agent) => ({
+          ...agent,
+          phase: "running",
+          startedAt: Date.now(),
+        })),
+      }));
 
-        setState((prev) => {
-          const updated = [...prev.agents];
-          updated[i] = {
-            ...updated[i],
-            phase: "running",
-            startedAt: Date.now(),
-          };
-          return { ...prev, agents: updated };
-        });
+      // Rotate thoughts across all agents every 600ms to keep UI alive while waiting for LLM
+      const thoughtInterval = setInterval(() => {
+        setState((prev) => ({
+          ...prev,
+          agents: prev.agents.map((agent) => ({
+            ...agent,
+            currentThought: agent.phase === "running" ? getRandomThought(agent.name) : agent.currentThought,
+          })),
+        }));
+      }, 600);
 
-        // Rotate thoughts every 400ms while running
-        const thoughtInterval = setInterval(() => {
-          setState((prev) => {
-            const updated = [...prev.agents];
-            if (updated[i].phase === "running") {
-              updated[i] = {
-                ...updated[i],
-                currentThought: getRandomThought(agentName),
-              };
-            }
-            return { ...prev, agents: updated };
-          });
-        }, 400);
-
-        // Mark as done after ~1.2s of running
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-
-        clearInterval(thoughtInterval);
-
-        setState((prev) => {
-          const updated = [...prev.agents];
-          updated[i] = {
-            ...updated[i],
-            phase: "success",
-            finishedAt: Date.now(),
-            currentThought: null,
-          };
-          return { ...prev, agents: updated };
-        });
-      }
-
-      // Wait for backend response (max 30s, clamp animation to ~6s total)
+      // Wait for real backend response (max 6 minutes to allow for slow Ollama generation)
       const result = await Promise.race([
         backendPromise,
-        new Promise((resolve) => setTimeout(resolve, 30000)),
+        new Promise((resolve) => setTimeout(resolve, 360000)),
       ]);
+
+      clearInterval(thoughtInterval);
+
 
       if (result && typeof result === "object") {
         const pipelineResult = result as PipelineRunOut;
@@ -140,12 +110,23 @@ export function usePipelineRun() {
           status: "done",
           report: firstReport?.report || null,
           validation: firstReport?.validation || null,
+          agents: prev.agents.map((agent) => ({
+            ...agent,
+            phase: "success",
+            finishedAt: Date.now(),
+            currentThought: null,
+          })),
         }));
       } else {
         setState((prev) => ({
           ...prev,
           status: "error",
           error: "Pipeline did not return results",
+          agents: prev.agents.map((agent) => ({
+            ...agent,
+            phase: "idle",
+            currentThought: null,
+          })),
         }));
       }
     },

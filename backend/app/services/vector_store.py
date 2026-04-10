@@ -33,7 +33,9 @@ from app.utils.logger import get_logger
 logger = get_logger("vector_store")
 
 
-class _OllamaChromaEmbeddingFunction:
+import chromadb
+
+class _OllamaChromaEmbeddingFunction(chromadb.api.types.EmbeddingFunction):
     """Adapter that exposes `OllamaEmbeddings` with the signature ChromaDB
     expects (`__call__(input: list[str]) -> list[list[float]]`).
 
@@ -58,8 +60,21 @@ class _OllamaChromaEmbeddingFunction:
 
     # ChromaDB validates this exact signature.
     def __call__(self, input: list[str]) -> list[list[float]]:  # noqa: A002
-        client = self._ensure_client()
-        return client.embed_documents(list(input))
+        try:
+            client = self._ensure_client()
+            return client.embed_documents(list(input))
+        except Exception as exc:
+            err_msg = str(exc)
+            if "404" in err_msg or "not found" in err_msg.lower():
+                logger.error(f"MODEL MISSING: The Ollama model '{self._model}' is not installed.")
+                logger.error(f"FIX: Run 'ollama pull {self._model}' in your terminal.")
+            elif "ConnectionError" in err_msg or "11434" in err_msg:
+                logger.error("OLLAMA OFFLINE: Could not connect to Ollama at http://localhost:11434")
+                logger.error("FIX: Make sure the Ollama application is running.")
+            else:
+                logger.error(f"Embedding generation failed: {exc}")
+            
+            raise RuntimeError(f"Ollama embedding failed for model {self._model}") from exc
 
     # Chroma 0.5+ also calls these introspection helpers.
     def name(self) -> str:

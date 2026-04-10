@@ -104,7 +104,7 @@ export default function DashboardPage() {
                   <Badge variant="default">{state.report.citations?.length || 0} Citations</Badge>
                 </div>
                 <p className="font-sans font-medium text-sm border-l-4 border-[#0A0A0A] pl-3">
-                  {state.validation ? `Validity: ${state.validation.is_valid ? "✓ Valid" : "⚠ Check required"} (${(state.validation.confidence * 100).toFixed(0)}% confident)` : "Processing..."}
+                  {state.validation ? `Validity: ${state.validation.is_valid ? "✓ Valid" : "⚠ Check required"} (${((state.validation.confidence || 0) * 100).toFixed(0)}% confident)` : "Processing..."}
                 </p>
               </Card>
 
