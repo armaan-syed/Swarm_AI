@@ -86,9 +86,12 @@ class ImpactMapperAgent(BaseAgent):
     async def _analyze_change(self, change: ClauseChange, company_context=None) -> ClauseImpact:
         text = change.new_text or change.old_text or ""
         similar = await self._find_similar(text, company_context)
+
+        # Get RAG context for better analysis
+        rag_context = await self._get_rag_context(text, company_context)
         departments = self._guess_departments(text)
 
-        # Build system prompt with optional company context
+        # Build system prompt with optional company context and RAG context
         system_prompt = IMPACT_SYSTEM
         if company_context:
             system_prompt += (
@@ -97,6 +100,12 @@ class ImpactMapperAgent(BaseAgent):
                 f"- Industry: {company_context.industry or 'not specified'}\n"
                 f"- Products/Services: {company_context.product_description or 'not specified'}\n"
                 f"Tailor your analysis to this company's specific business."
+            )
+
+        if rag_context:
+            system_prompt += (
+                f"\n\nRelevant regulatory context:\n{rag_context}\n"
+                f"Use this context to inform your impact analysis."
             )
 
         # LLM call for severity + impact statement
@@ -149,6 +158,44 @@ class ImpactMapperAgent(BaseAgent):
         except Exception as exc:
             logger.debug("ChromaDB similarity search failed: %s", exc)
             return []
+
+    async def _get_rag_context(self, text: str, company_context=None) -> str:
+        """Get relevant regulatory context using RAG service."""
+        try:
+            from app.services.rag_service import get_rag_service
+
+            rag_service = get_rag_service()
+
+            # Get mixed context (regulatory + company)
+            context_results = await rag_service.retrieve_mixed_context(
+                query=text[:1000],  # Use first 1000 chars for query
+                top_k_regulatory=3,
+                top_k_company=2,
+                company_id=company_context.id if company_context else None
+            )
+
+            # Format context for LLM
+            context_parts = []
+
+            # Add regulatory context
+            if context_results["regulatory"]:
+                context_parts.append("Regulatory Context:")
+                for i, chunk in enumerate(context_results["regulatory"], 1):
+                    context_parts.append(f"{i}. {chunk['chunk'][:500]}...")
+                context_parts.append("")
+
+            # Add company context
+            if context_results["company"]:
+                context_parts.append("Company Context:")
+                for i, chunk in enumerate(context_results["company"], 1):
+                    context_parts.append(f"{i}. {chunk['chunk'][:500]}...")
+                context_parts.append("")
+
+            return "\n".join(context_parts).strip()
+
+        except Exception as exc:
+            logger.debug("RAG context retrieval failed: %s", exc)
+            return ""
 
     def _guess_departments(self, text: str) -> list[str]:
         low = text.lower()

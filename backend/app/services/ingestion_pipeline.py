@@ -70,7 +70,7 @@ class IngestionPipeline:
         raw_bytes: bytes,
     ) -> dict[str, Any]:
         """Extract text from a company document, chunk it, embed, and
-        store in ChromaDB's company_documents collection.
+        store in ChromaDB's company_documents collection using RAG service.
 
         Returns a summary dict with chunk count and doc_hash.
         """
@@ -107,37 +107,45 @@ class IngestionPipeline:
                 "status": "duplicate",
             }
 
-        # 4. Chunk the text
-        chunks = self._chunk_text(text)
+        # 4. Use RAG service to chunk and embed
+        from app.services.rag_service import get_rag_service
 
-        # 5. Upsert into ChromaDB
-        ids = [f"{company_id}:{doc_hash}:{i}" for i in range(len(chunks))]
-        metadatas = [
-            {
+        rag_service = get_rag_service()
+        document_id = f"{company_id}:{doc_hash}"
+
+        success = await rag_service.embed_and_store(
+            document_id=document_id,
+            content=text,
+            source="COMPANY",
+            metadata={
                 "company_id": company_id,
-                "source": "company",
                 "title": filename,
                 "doc_hash": doc_hash,
-                "chunk_index": i,
-            }
-            for i in range(len(chunks))
-        ]
-
-        success = self.vector_store.upsert(
-            collection=settings.CHROMA_COMPANY_COLLECTION,
-            ids=ids,
-            texts=chunks,
-            metadatas=metadatas,
+                "filename": filename,
+            },
+            collection=settings.CHROMA_COMPANY_COLLECTION
         )
 
-        # 6. Store metadata in Supabase (MANDATORY for persistence tracking)
+        if not success:
+            return {
+                "company_id": company_id,
+                "filename": filename,
+                "chunks": 0,
+                "doc_hash": doc_hash,
+                "status": "embedding_failed",
+            }
+
+        # Estimate chunk count (rough approximation)
+        estimated_chunks = max(1, len(text) // (_CHUNK_SIZE - _CHUNK_OVERLAP))
+
+        # 5. Store metadata in Supabase (MANDATORY for persistence tracking)
         client = get_supabase()
         if not client:
             logger.error("Supabase client missing during document ingestion!")
             return {
                 "company_id": company_id,
                 "filename": filename,
-                "chunks": len(chunks),
+                "chunks": estimated_chunks,
                 "doc_hash": doc_hash,
                 "status": "db_unavailable",
             }

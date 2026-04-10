@@ -11,8 +11,9 @@ logger = get_logger("supabase_client")
 
 @lru_cache
 def get_supabase() -> Client | None:
+    """Get Supabase client for database operations (uses service role key)."""
     if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
-        logger.warning("Supabase keys are missing! Falling back to empty client.")
+        logger.warning("Supabase service role key is missing! Falling back to empty client.")
         return None
     
     try:
@@ -22,4 +23,19 @@ def get_supabase() -> Client | None:
         return client
     except Exception as exc:
         logger.error("Failed to initialize Supabase client: %s", exc)
+        return None
+
+
+@lru_cache
+def get_supabase_auth() -> Client | None:
+    """Get Supabase client for authentication operations (uses anon key)."""
+    if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+        logger.warning("Supabase anon key is missing! Falling back to empty client.")
+        return None
+    
+    try:
+        client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+        return client
+    except Exception as exc:
+        logger.error("Failed to initialize Supabase auth client: %s", exc)
         return None
