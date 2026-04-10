@@ -30,8 +30,10 @@ class Settings(BaseSettings):
     # Auth
     JWT_ALGORITHM: str = "HS256"
 
-    # Email (Resend)
-    RESEND_API_KEY: str = ""
+    # Email (Brevo - New)
+    BREVO_API_KEY: str = ""
+    BREVO_SENDER_EMAIL: str = "johnphilji@gmail.com"
+    BREVO_SENDER_NAME: str = "Swarm AI"
 
     # Scheduler (RBI/SEBI/MCA source monitoring)
     SCHEDULER_ENABLED: bool = True

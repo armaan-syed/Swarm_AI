@@ -1,5 +1,6 @@
 from typing import Optional
 from app.db.supabase_client import get_supabase
+from app.services.email_service import DEPT_EMAIL_MAP
 from pydantic import BaseModel, Field
 from app.utils.logger import get_logger
 
@@ -10,9 +11,27 @@ _DEPT_CACHE = {}
 
 # Fallback team defaults for G->P flow
 TEAM_DEFAULTS = [
-    {"name": "Strategic Oversight", "contact_name": "John Philji", "contact_email": "johnphilji2007@gmail.com", "company_id": ""},
-    {"name": "Operations", "contact_name": "Chris Fernandes", "contact_email": "chriscric17@gmail.com", "company_id": ""},
-    {"name": "Risk & Audit", "contact_name": "Armaan Syed", "contact_email": "armaansyed009@gmail.com", "company_id": ""},
+    {
+        "name": "Strategic Oversight",
+        "description": "Executive leadership and strategic decision-making. Responsible for Board-level compliance strategy, policy approvals, and regulatory liaison.",
+        "contact_name": "John Philji",
+        "contact_email": "johnphilji2007@gmail.com",
+        "company_id": "",
+    },
+    {
+        "name": "Operations",
+        "description": "Day-to-day operational management. Handles lending pipeline, portfolio rebalancing, product development, and system migrations.",
+        "contact_name": "Chris Fernandes",
+        "contact_email": "chriscric17@gmail.com",
+        "company_id": "",
+    },
+    {
+        "name": "Risk & Audit",
+        "description": "Risk assessment, internal audit, and regulatory compliance monitoring. Conducts stress testing, capital adequacy analysis, and audit trail management.",
+        "contact_name": "Armaan Syed",
+        "contact_email": "armaansyed009@gmail.com",
+        "company_id": "",
+    },
 ]
 
 class DepartmentContact(BaseModel):
@@ -42,6 +61,14 @@ async def list_departments(company_id: str) -> list[DepartmentContact]:
         return TEAM_DEFAULTS
 
 async def create_department(dept: DepartmentContact) -> DepartmentContact:
+    # Also register in email map for live dispatch
+    DEPT_EMAIL_MAP[dept.name.lower().strip()] = dept.contact_email
+    logger.info("Registered new department in email map: %s -> %s", dept.name, dept.contact_email)
+
+    # Add to in-memory cache
+    if dept.company_id in _DEPT_CACHE:
+        _DEPT_CACHE[dept.company_id].append(dept)
+    
     client = get_supabase()
     if not client:
         return dept

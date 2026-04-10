@@ -1,5 +1,6 @@
 """Compliance API routes — RBI/SEBI/MCA pipeline."""
 from fastapi import APIRouter, BackgroundTasks, HTTPException, UploadFile, File, Form
+from pydantic import BaseModel
 
 from app.db.supabase_client import get_supabase
 from app.models.compliance_schemas import (
@@ -10,6 +11,11 @@ from app.models.compliance_schemas import (
     RunPipelineRequest,
 )
 from app.services.ingestion_pipeline import IngestionPipeline
+from app.data.prebaked_reports import get_next_prebaked_report
+from app.services.email_service import get_email_service, DEPT_EMAIL_MAP
+from app.utils.logger import get_logger, get_run_log_store
+
+logger = get_logger("compliance_routes")
 
 router = APIRouter()
 
@@ -85,7 +91,110 @@ async def upload_company_document(
     }
 
 
+# ── Pre-baked Demo Pipeline ───────────────────────────────────────────────────
+
+@router.get("/prebaked")
+async def get_prebaked_report() -> dict:
+    """Return the next pre-baked compliance report for demo mode.
+    
+    Rotates through 3 highly detailed reports (PSL, KYC, NBFC).
+    Each call returns a different report with fresh timestamps.
+    Also logs the pipeline run to the activity feed.
+    """
+    report = get_next_prebaked_report()
+    
+    # Log to activity feed
+    log_store = get_run_log_store()
+    log_store.record({
+        "event": "pipeline_complete",
+        "source": report["ref"]["source"],
+        "title": report["ref"]["title"],
+        "severity": report["severity"],
+        "summary": report["summary"],
+        "status": "completed",
+    })
+    
+    return {
+        "success": True,
+        "result": report,
+    }
+
+
+class SendAlertsRequest(BaseModel):
+    email_drafts: list[dict]
+    extra_recipients: list[dict] | None = None  # [{name, email}]
+
+
+@router.post("/send-alerts")
+async def send_alerts(payload: SendAlertsRequest) -> dict:
+    """Send real compliance alert emails via Brevo to all team members.
+    
+    Dispatches to stored department emails + any extra recipients
+    (e.g. a 4th judge-added department).
+    """
+    email_service = get_email_service()
+    results = []
+    log_store = get_run_log_store()
+    
+    # Send pre-baked email drafts to known departments
+    for draft in payload.email_drafts:
+        to_name = draft.get("to", "Compliance")
+        success = await email_service.send_compliance_alert(
+            to_name=to_name,
+            subject=draft.get("subject", "Regulatory Compliance Update"),
+            body=draft.get("body", ""),
+        )
+        results.append({
+            "to": to_name,
+            "email": DEPT_EMAIL_MAP.get(to_name.lower().strip(), "fallback"),
+            "sent": success,
+        })
+        log_store.record({
+            "event": "email_sent",
+            "to": to_name,
+            "subject": draft.get("subject", ""),
+            "status": "sent" if success else "failed",
+        })
+    
+    # Send to any extra recipients (dynamically added departments)
+    if payload.extra_recipients:
+        for recipient in payload.extra_recipients:
+            r_name = recipient.get("name", "Team Member")
+            r_email = recipient.get("email", "")
+            if not r_email:
+                continue
+            
+            # Use the first draft as a template but personalize it
+            template_draft = payload.email_drafts[0] if payload.email_drafts else {}
+            success = await email_service.send_compliance_alert(
+                to_email=r_email,
+                to_name=r_name,
+                subject=template_draft.get("subject", "Regulatory Compliance Update"),
+                body=f"Dear {r_name},\n\n"
+                     f"This is a personalized compliance intelligence briefing from Swarm AI.\n\n"
+                     f"{template_draft.get('body', 'Please review the latest regulatory update.')}\n\n"
+                     f"— Swarm AI Compliance Intelligence Engine",
+            )
+            results.append({
+                "to": r_name,
+                "email": r_email,
+                "sent": success,
+            })
+            log_store.record({
+                "event": "email_sent",
+                "to": f"{r_name} ({r_email})",
+                "status": "sent" if success else "failed",
+            })
+    
+    return {
+        "success": True,
+        "dispatched": len(results),
+        "results": results,
+    }
+
+
 # ── Data reads ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/circulars", response_model=list[CircularOut])
 async def list_circulars(

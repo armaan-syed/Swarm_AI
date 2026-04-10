@@ -17,6 +17,19 @@ export async function runOne(url: string, source = "RBI"): Promise<unknown> {
   return apiClient.post("/compliance/run-one", { url, source });
 }
 
+/** Fetch the next pre-baked compliance report (rotates PSL → KYC → NBFC). */
+export async function getPrebakedReport(): Promise<{ success: boolean; result: any }> {
+  return apiClient.get<{ success: boolean; result: any }>("/compliance/prebaked");
+}
+
+/** Send real compliance alert emails to all departments via Resend. */
+export async function sendAlerts(payload: {
+  email_drafts: any[];
+  extra_recipients?: { name: string; email: string }[];
+}): Promise<{ success: boolean; dispatched: number; results: any[] }> {
+  return apiClient.post("/compliance/send-alerts", payload);
+}
+
 export async function listReports(
   limit = 20,
   severity?: string

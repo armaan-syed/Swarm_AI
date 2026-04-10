@@ -1,7 +1,7 @@
 import React from "react";
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "default" | "yellow" | "lime" | "coral" | "blue" | "dark" | "success" | "warning" | "error";
+  variant?: "default" | "yellow" | "lime" | "coral" | "blue" | "dark" | "success" | "warning" | "error" | "danger";
 }
 
 export function Badge({ variant = "default", className = "", children, ...props }: BadgeProps) {
@@ -17,6 +17,7 @@ export function Badge({ variant = "default", className = "", children, ...props 
     success: "bg-[var(--color-neo-success)] text-white",
     warning: "bg-[var(--color-neo-warning)] text-[var(--color-neo-fg-primary)]",
     error: "bg-[var(--color-neo-error)] text-white",
+    danger: "bg-[#FF4D4D] text-white",
   };
 
   return (
