@@ -117,6 +117,9 @@ class RBIOrchestrator:
         # 6. Validate
         validation = await self.validator.run(change_report, impact_map, report)
 
+        # 7. Embed document for RAG (after processing)
+        await self._embed_for_rag(new_doc, ref)
+
         # Persist
         await self._persist(new_doc, change_report, impact_map, report, validation)
 
@@ -234,3 +237,59 @@ class RBIOrchestrator:
             
         except Exception as exc:  # noqa: BLE001
             logger.error("Persist failed for %s: %s", new_doc.ref.url, exc, exc_info=True)
+
+    async def _embed_for_rag(self, new_doc: ExtractedDoc, ref: CircularRef) -> None:
+        """Embed the extracted document for RAG retrieval."""
+        try:
+            from app.services.rag_service import get_rag_service
+            from app.config import settings
+
+            rag_service = get_rag_service()
+
+            # Create document ID from URL hash
+            import hashlib
+            doc_hash = hashlib.md5(ref.url.encode()).hexdigest()
+            document_id = f"{ref.source}:{doc_hash}"
+
+            # Combine all clause texts for embedding
+            full_text = new_doc.raw_text
+            if not full_text.strip():
+                # Fallback to clause texts if raw text is empty
+                clause_texts = []
+                for clause in new_doc.clauses:
+                    clause_texts.append(f"Clause {clause.number}: {clause.heading}\n{clause.text}")
+                full_text = "\n\n".join(clause_texts)
+
+            if full_text.strip():
+                # Map source string to RAG service source type
+                source_map = {
+                    "RBI": "RBI",
+                    "SEBI": "SEBI",
+                    "MCA": "MCA"
+                }
+                rag_source = source_map.get(ref.source, "RBI")
+
+                success = await rag_service.embed_and_store(
+                    document_id=document_id,
+                    content=full_text,
+                    source=rag_source,
+                    metadata={
+                        "source": ref.source,
+                        "title": ref.title,
+                        "url": ref.url,
+                        "published_date": ref.published_date,
+                        "effective_date": new_doc.effective_date,
+                        "doc_hash": doc_hash,
+                    },
+                    collection=settings.CHROMA_CIRCULAR_COLLECTION
+                )
+
+                if success:
+                    logger.info("Embedded document for RAG: %s", ref.url)
+                else:
+                    logger.warning("Failed to embed document for RAG: %s", ref.url)
+            else:
+                logger.warning("No text content to embed for RAG: %s", ref.url)
+
+        except Exception as exc:
+            logger.exception("RAG embedding failed for %s: %s", ref.url, exc)

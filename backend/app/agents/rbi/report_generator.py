@@ -57,6 +57,9 @@ class ReportGeneratorAgent(BaseAgent):
     ) -> ValidatedReport:
         clause_payload = self._build_clause_payload(change_report, impact_map)
 
+        # Get RAG context for better report generation
+        rag_context = await self._get_rag_context(change_report, company_context)
+
         # Optional company context header
         context_line = ""
         if company_context:
@@ -73,6 +76,9 @@ class ReportGeneratorAgent(BaseAgent):
             f"Overall severity: {impact_map.overall_severity}\n\n"
             f"Changes ({change_report.summary}):\n{clause_payload}"
         )
+
+        if rag_context:
+            prompt += f"\n\nRelevant Context:\n{rag_context}"
 
         try:
             response = await self.llm.ainvoke([
@@ -146,6 +152,55 @@ class ReportGeneratorAgent(BaseAgent):
             return False
         valid_numbers = {c.number for c in change_report.new_doc.clauses}
         return all(cite in valid_numbers for cite in citations)
+
+    async def _get_rag_context(self, change_report: ChangeReport, company_context=None) -> str:
+        """Get relevant context using RAG service for report generation."""
+        try:
+            from app.services.rag_service import get_rag_service
+
+            rag_service = get_rag_service()
+
+            # Build query from change summary and key clauses
+            query_parts = [change_report.summary]
+
+            # Add key changed clauses
+            for change in change_report.changes[:5]:  # Limit to first 5 changes
+                if change.change_type != "unchanged":
+                    text = change.new_text or change.old_text or ""
+                    query_parts.append(f"Clause {change.number}: {text[:200]}")
+
+            query = " ".join(query_parts)
+
+            # Get mixed context
+            context_results = await rag_service.retrieve_mixed_context(
+                query=query[:1000],  # Limit query length
+                top_k_regulatory=4,
+                top_k_company=3,
+                company_id=company_context.id if company_context else None
+            )
+
+            # Format context for LLM
+            context_parts = []
+
+            # Add regulatory context
+            if context_results["regulatory"]:
+                context_parts.append("Additional Regulatory Context:")
+                for i, chunk in enumerate(context_results["regulatory"], 1):
+                    context_parts.append(f"• {chunk['chunk'][:400]}...")
+                context_parts.append("")
+
+            # Add company context
+            if context_results["company"]:
+                context_parts.append("Company-Specific Context:")
+                for i, chunk in enumerate(context_results["company"], 1):
+                    context_parts.append(f"• {chunk['chunk'][:400]}...")
+                context_parts.append("")
+
+            return "\n".join(context_parts).strip()
+
+        except Exception as exc:
+            logger.debug("RAG context retrieval failed for report generation: %s", exc)
+            return ""
 
     def _fallback_report(
         self, change_report: ChangeReport, impact_map: ImpactMap, exc: Exception
