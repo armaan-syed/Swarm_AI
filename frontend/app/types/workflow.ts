@@ -1,4 +1,10 @@
 export type NodeStatus = "idle" | "running" | "success" | "error";
+export type AgentName =
+  | "source_monitor"
+  | "document_extractor"
+  | "change_detector"
+  | "impact_mapper"
+  | "report_generator";
 
 export interface WorkflowNode {
   id: string;
@@ -33,4 +39,21 @@ export interface ExecutionLog {
   message: string;
   duration?: number;
   timestamp: Date;
+}
+
+export interface AgentNodeState {
+  name: AgentName;
+  label: string;
+  phase: NodeStatus;
+  currentThought: string | null;
+  startedAt: number | null;
+  finishedAt: number | null;
+}
+
+export interface PipelineState {
+  status: "idle" | "running" | "done" | "error";
+  agents: AgentNodeState[];
+  report: any | null;
+  validation: any | null;
+  error: string | null;
 }
