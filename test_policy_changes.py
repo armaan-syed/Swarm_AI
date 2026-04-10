@@ -12,7 +12,7 @@ async def test_policy_changes():
             if response.status_code == 200:
                 data = response.json()
                 print(f"New changes: {data.get('new_changes', 0)}")
-                for change in data.get('changes', []):
+                for change in data.get('changes', []): 
                     print(f"- {change['title']} ({change['published_date']})")
             else:
                 print(f"Error: {response.text}")
