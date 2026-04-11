@@ -35,7 +35,7 @@ def _build_email_html(to_name: str, subject: str, body: str) -> str:
         <!-- Header -->
         <div style="background: #0A0A0A; color: #FFFEF2; padding: 24px 28px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="font-size: 28px;">🤖</div>
+                <div style="width: 32px; height: 32px; background: #BFFF00; border: 2px solid #FFFEF2; display: flex; align-items: center; justify-content: center; color: black; font-weight: 900; font-size: 20px;">S</div>
                 <div>
                     <h1 style="margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase;">
                         Swarm AI — Compliance Intelligence
@@ -49,7 +49,7 @@ def _build_email_html(to_name: str, subject: str, body: str) -> str:
 
         <!-- Severity Banner -->
         <div style="background: {severity_color}; color: white; padding: 10px 28px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">
-            ⚡ {severity_label} — AUTONOMOUS AI ALERT
+            {severity_label} — AUTONOMOUS ANALYTICS ENGINE
         </div>
 
         <!-- Recipient Info -->

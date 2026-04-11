@@ -6,7 +6,8 @@ export type AgentName =
   | "document_extractor"
   | "change_detector"
   | "impact_mapper"
-  | "report_generator";
+  | "report_generator"
+  | "communication_agent";
 
 export interface WorkflowNode {
   id: string;

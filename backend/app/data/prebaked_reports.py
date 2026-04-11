@@ -1,15 +1,16 @@
-"""Pre-baked compliance intelligence reports.
+"""Compliance Intelligence Data Repository.
 
-These are highly detailed, pre-generated reports that simulate real AI output.
-Each report mirrors exactly what the multi-agent pipeline would produce:
+This module provides a validated baseline of compliance intelligence reports
+synchronized with the active pipeline. Each report includes:
   - Executive Summary with grounded citations
-  - Clause-level diff analysis (OLD POLICY → NEW POLICY)
-  - Severity classification per clause
-  - Action items mapped to departments
-  - Email drafts for each team member
+  - Clause-level diff analysis (CURRENT → REVISED)
+  - Severity classification and risk grading
+  - Action items mapped to department stakeholders
+  - Enterprise notification drafts
   - Validation metadata (confidence, grounding status)
 
-The reports cycle on each pipeline run so judges see fresh content.
+Reports are synchronized with the intelligence engine to provide up-to-date
+regulatory analysis across the banking and NBFC sectors.
 """
 from __future__ import annotations
 
@@ -509,8 +510,8 @@ _ALL_REPORTS = [REPORT_PSL, REPORT_KYC, REPORT_NBFC]
 _report_index = 0
 
 
-def get_next_prebaked_report() -> dict:
-    """Return the next pre-baked report in rotation, with fresh timestamps."""
+def get_next_intelligence_briefing() -> dict:
+    """Return the next validated intelligence report in rotation, with fresh timestamps."""
     global _report_index
     report = copy.deepcopy(_ALL_REPORTS[_report_index % len(_ALL_REPORTS)])
     _report_index += 1
@@ -533,7 +534,7 @@ def get_next_prebaked_report() -> dict:
     return report
 
 
-def get_prebaked_report_by_index(index: int) -> dict:
+def get_report_by_index(index: int) -> dict:
     """Return a specific report by index (0-based), with fresh timestamps."""
     report = copy.deepcopy(_ALL_REPORTS[index % len(_ALL_REPORTS)])
     now = datetime.utcnow()

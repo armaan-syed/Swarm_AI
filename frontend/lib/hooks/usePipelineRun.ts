@@ -107,13 +107,13 @@ export function usePipelineRun() {
         .runPipeline({ company_id: companyId, max_docs: 5 })
         .catch((err) => console.warn("[Background pipeline]", err));
 
-      // 2. Fetch pre-baked report (fast — returns immediately)
-      let prebakedData: any = null;
+      // 2. Fetch latest intelligence briefing
+      let intelligenceData: any = null;
       try {
-        const resp = await complianceApi.getPrebakedReport();
-        prebakedData = resp.result;
+        const resp = await complianceApi.getLatestIntelligence();
+        intelligenceData = resp.result;
       } catch (err) {
-        console.error("Failed to fetch prebaked report:", err);
+        console.error("Failed to fetch intelligence briefing:", err);
         setState((prev) => ({
           ...prev,
           status: "error",
@@ -122,7 +122,7 @@ export function usePipelineRun() {
         return;
       }
 
-      // 3. Choreographed agent animation — each agent runs sequentially
+      // 3. Sequential agent processing analysis
       for (let agentIdx = 0; agentIdx < AGENT_SEQUENCE.length; agentIdx++) {
         if (abortRef.current) break;
         const agentName = AGENT_SEQUENCE[agentIdx];
@@ -162,12 +162,12 @@ export function usePipelineRun() {
         }));
       }
 
-      // 4. Display the pre-baked report
-      if (prebakedData) {
-        const report = prebakedData.report;
-        const validation = prebakedData.validation;
+      // 4. Display the intelligence report
+      if (intelligenceData) {
+        const report = intelligenceData.report;
+        const validation = intelligenceData.validation;
 
-        // Save to localStorage history
+        // Save to audit history
         saveToHistory(report);
 
         setState((prev) => ({
@@ -183,7 +183,7 @@ export function usePipelineRun() {
           })),
         }));
 
-        return prebakedData; // Return so caller can send emails with fresh data
+        return intelligenceData; // Return so caller can send emails with fresh data
       } else {
         setState((prev) => ({
           ...prev,

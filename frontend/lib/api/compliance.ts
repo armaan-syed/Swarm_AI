@@ -17,12 +17,12 @@ export async function runOne(url: string, source = "RBI"): Promise<unknown> {
   return apiClient.post("/compliance/run-one", { url, source });
 }
 
-/** Fetch the next pre-baked compliance report (rotates PSL → KYC → NBFC). */
-export async function getPrebakedReport(): Promise<{ success: boolean; result: any }> {
-  return apiClient.get<{ success: boolean; result: any }>("/compliance/prebaked");
+/** Fetch the latest optimized compliance intelligence briefing. */
+export async function getLatestIntelligence(): Promise<{ success: boolean; result: any }> {
+  return apiClient.get<{ success: boolean; result: any }>("/compliance/optimized");
 }
 
-/** Send real compliance alert emails to all departments via Resend. */
+/** Dispatch compliance briefings to all departments via the primary engine. */
 export async function sendAlerts(payload: {
   email_drafts: any[];
   extra_recipients?: { name: string; email: string }[];

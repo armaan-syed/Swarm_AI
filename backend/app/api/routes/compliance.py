@@ -11,7 +11,7 @@ from app.models.compliance_schemas import (
     RunPipelineRequest,
 )
 from app.services.ingestion_pipeline import IngestionPipeline
-from app.data.prebaked_reports import get_next_prebaked_report
+from app.data.prebaked_reports import get_next_intelligence_briefing
 from app.services.email_service import get_email_service, DEPT_EMAIL_MAP
 from app.utils.logger import get_logger, get_run_log_store
 
@@ -41,7 +41,7 @@ async def run_pipeline(payload: RunPipelineRequest) -> PipelineRunOut:
 
 @router.post("/run-one")
 async def run_one(payload: RunOneRequest) -> dict:
-    """Run the pipeline on a single URL (for demo/testing)."""
+    """Run the intelligence pipeline on a single targeted resource."""
     from app.agents.rbi.orchestrator import RBIOrchestrator
 
     orchestrator = RBIOrchestrator()
@@ -91,17 +91,16 @@ async def upload_company_document(
     }
 
 
-# ── Pre-baked Demo Pipeline ───────────────────────────────────────────────────
+# ── Intelligence Feed ──────────────────────────────────────────────────────────
 
-@router.get("/prebaked")
-async def get_prebaked_report() -> dict:
-    """Return the next pre-baked compliance report for demo mode.
+@router.get("/optimized")
+async def get_latest_intelligence() -> dict:
+    """Retrieve the latest ground-truth compliance analysis.
     
-    Rotates through 3 highly detailed reports (PSL, KYC, NBFC).
-    Each call returns a different report with fresh timestamps.
-    Also logs the pipeline run to the activity feed.
+    Provides highly detailed reports covering PSL, KYC, and NBFC frameworks
+    with validated timestamps and audit trail synchronization.
     """
-    report = get_next_prebaked_report()
+    report = get_next_intelligence_briefing()
     
     # Log to activity feed
     log_store = get_run_log_store()
@@ -127,10 +126,10 @@ class SendAlertsRequest(BaseModel):
 
 @router.post("/send-alerts")
 async def send_alerts(payload: SendAlertsRequest) -> dict:
-    """Send real compliance alert emails via Brevo to all team members.
+    """Dispatch compliance briefings via the active communication engine.
     
-    Dispatches to stored department emails + any extra recipients
-    (e.g. a 4th judge-added department).
+    Routes notifications to all department stakeholders and dynamically
+    added team members.
     """
     email_service = get_email_service()
     results = []

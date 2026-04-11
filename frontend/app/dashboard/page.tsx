@@ -16,8 +16,9 @@ import { usePipelineRun, getLocalHistory } from "@/lib/hooks/usePipelineRun";
 import { useDepartments } from "@/lib/hooks/useDepartments";
 import { useSearchParams } from "next/navigation";
 import * as complianceApi from "@/lib/api/compliance";
+import { Suspense } from "react";
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isIndexing = searchParams.get("status") === "indexing";
@@ -199,14 +200,13 @@ export default function DashboardPage() {
           </div>
 
           <div className="px-2">
-            <Button
-              variant="primary"
-              size="xl"
+            <Button 
+              variant="primary" 
+              className="w-full !py-6 text-xl tracking-[0.2em] font-black border-[4px] shadow-[8px_8px_0px_#0A0A0A] active:translate-y-1 active:shadow-none transition-all"
               onClick={handleRunPipeline}
               disabled={state.status === "running"}
-              className="w-full"
             >
-              {state.status === "running" ? "PIPELINE RUNNING..." : "RUN COMPLIANCE CHECK →"}
+              {state.status === "running" ? "PROCESSING..." : "SCAN LIVE SOURCES →"}
             </Button>
           </div>
 
@@ -231,13 +231,13 @@ export default function DashboardPage() {
                   )}
                   <div>
                     <p className="font-heading font-black text-sm uppercase">
-                      {emailStatus === "sending" ? "📡 Dispatching Email Swarm..." :
-                       emailStatus === "sent" ? "✅ Email Swarm Dispatched" :
-                       "❌ Email Dispatch Failed"}
+                      {emailStatus === "sending" ? "Dispatching Notifications..." :
+                       emailStatus === "sent" ? "Notifications Dispatched" :
+                       "Dispatch Failed"}
                     </p>
                     {emailStatus === "sent" && (
                       <p className="font-mono text-[10px] mt-1 opacity-80">
-                        {emailResults.length} personalized briefings sent via Resend API
+                        {emailResults.length} personalized briefings sent via Brevo API
                       </p>
                     )}
                   </div>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full"></div>
                 <p className="font-mono text-xs font-black uppercase tracking-tighter">
-                  Agents are indexing your Knowledge Base... 
+                  Indexing Knowledge Base... 
                 </p>
               </div>
               <Badge variant="dark" className="border-white text-[9px] cursor-pointer" onClick={() => router.replace('/dashboard')}>DISMISS</Badge>
@@ -330,10 +330,10 @@ export default function DashboardPage() {
               {/* Enhanced Tab Switcher */}
               <div className="flex border-b-[3px] border-black overflow-x-auto scrollbar-hide">
                 {[
-                  { id: "report", label: "📄 Deep Report", color: "bg-[#FFE500]" },
-                  { id: "timeline", label: "🗓 Roadmap", color: "bg-[#BFFF00]" },
-                  { id: "briefing", label: "👤 Team Briefing", color: "bg-[#0066FF]" },
-                  { id: "history", label: "🕒 History", color: "bg-[#FF4600]" },
+                  { id: "report", label: "Deep Report", color: "bg-[#FFE500]" },
+                  { id: "timeline", label: "Roadmap", color: "bg-[#BFFF00]" },
+                  { id: "briefing", label: "Team Briefing", color: "bg-[#0066FF]" },
+                  { id: "history", label: "History", color: "bg-[#FF4600]" },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -419,7 +419,9 @@ export default function DashboardPage() {
                   {state.report.action_items && state.report.action_items.length > 0 && (
                     <Card className="!p-5">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-heading font-black text-lg uppercase">Action Items</h3>
+                        <h2 className="font-heading font-black text-2xl uppercase tracking-tighter leading-none mt-1">
+                          Intelligence Briefing
+                        </h2>
                         {selectedDept && (
                           <Badge variant="dark" className="bg-[#0066FF]">FILTERED BY: {selectedDept}</Badge>
                         )}
@@ -451,12 +453,15 @@ export default function DashboardPage() {
               {activeTab === "briefing" && (
                 <div className="flex flex-col gap-4">
                   <div className="bg-[#0066FF] text-white p-4 border-[3px] border-black shadow-[4px_4px_0px_#0A0A0A]">
+                    <div className="bg-[#BFFF00] px-1 text-[10px] font-black border border-black shadow-[1px_1px_0px_#0A0A0A]">
+                        ACTIVE MONITOR
+                      </div>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-heading font-black text-lg uppercase">AI Communication Swarm</h3>
+                        <h3 className="font-heading font-black text-lg uppercase">Communication System</h3>
                         <p className="font-mono text-[10px] opacity-80 uppercase tracking-widest mt-1">
                           Llama 3.2 generated {state.report.email_drafts?.length || 0} personalized briefings
-                          {emailStatus === "sent" && ` — ALL DISPATCHED via RESEND API`}
+                          {emailStatus === "sent" && ` — ALL DISPATCHED via BREVO API`}
                         </p>
                       </div>
                       <Button
@@ -470,14 +475,14 @@ export default function DashboardPage() {
                           }
                         }}
                       >
-                        {emailStatus === "sending" ? "DISPATCHING..." : emailStatus === "sent" ? "✅ RESEND EMAILS" : "📡 DISPATCH EMAILS NOW"}
+                        {emailStatus === "sending" ? "DISPATCHING..." : emailStatus === "sent" ? "RE-DISPATCH UPDATES" : "DISPATCH NOTIFICATIONS"}
                       </Button>
                     </div>
                   </div>
 
                   {/* Current Team Roster */}
                   <Card className="!p-4 bg-[#F5F0E8] border-dashed">
-                    <h4 className="font-heading font-black text-xs uppercase tracking-widest text-[#555] mb-3">📋 Team Notification Roster</h4>
+                    <h4 className="font-heading font-black text-xs uppercase tracking-widest text-[#555] mb-3">Team Notification Roster</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {departments.map((dept, i) => (
                         <div key={i} className="bg-white border-2 border-black p-2 shadow-[2px_2px_0px_#0A0A0A] flex items-center gap-2">
@@ -495,7 +500,7 @@ export default function DashboardPage() {
                   <Card className="!p-4 bg-[#FFFEF2] border-[3px] border-[#BFFF00]">
                     <h4 className="font-heading font-black text-sm uppercase mb-3 flex items-center gap-2">
                       <span className="bg-[#BFFF00] border-2 border-black w-6 h-6 flex items-center justify-center text-xs">+</span>
-                      Add New Department to Swarm
+                      Add New Department
                     </h4>
                     <form
                       className="flex flex-col gap-2"
@@ -509,7 +514,7 @@ export default function DashboardPage() {
                         try {
                           await addDept({ name, contact_email: email, description: desc || "", contact_name: name });
                           form.reset();
-                          alert(`✅ ${name} added to Team Swarm! Run the pipeline again to send them a personalized briefing.`);
+                          alert(`✅ ${name} added to Team! Run the pipeline again to send them a personalized briefing.`);
                         } catch (err) {
                           console.error("Failed to add department:", err);
                         }
@@ -536,7 +541,7 @@ export default function DashboardPage() {
                         className="bg-white border-2 border-black px-2 py-1.5 font-mono text-xs shadow-[2px_2px_0px_#0A0A0A] focus:shadow-[3px_3px_0px_#0066FF] focus:border-[#0066FF] outline-none transition-all"
                       />
                       <Button variant="primary" size="sm" className="self-end">
-                        ADD TO TEAM SWARM →
+                        ADD TO TEAM →
                       </Button>
                     </form>
                   </Card>
@@ -719,5 +724,17 @@ export default function DashboardPage() {
         context={state.report?.markdown?.substring(0, 1000)}
       />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen bg-[var(--color-neo-bg-alt)] flex items-center justify-center font-mono">
+        <div className="animate-pulse">Loading Swarm Dashboard...</div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }

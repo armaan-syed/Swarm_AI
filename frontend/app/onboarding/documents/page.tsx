@@ -57,6 +57,11 @@ export default function OnboardingDocumentsPage() {
       return;
     }
 
+    if (!company) {
+      setError("Company session not found. Please restart onboarding.");
+      return;
+    }
+
     setUploading(true);
     setError("");
 
