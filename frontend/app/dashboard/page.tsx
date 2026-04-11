@@ -18,6 +18,29 @@ import { useSearchParams } from "next/navigation";
 import * as complianceApi from "@/lib/api/compliance";
 import { Suspense } from "react";
 
+/** Render inline markdown: **bold**, Clause X.X references */
+function renderInline(text: string, keyBase: number, sourceUrl?: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|Clause \d+\.?\d*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={`${keyBase}-${i}`} className="font-black">{part.slice(2, -2)}</strong>;
+    if (/^Clause \d/.test(part))
+      return (
+        <a
+          key={`${keyBase}-${i}`}
+          href={sourceUrl || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-[#FFE500] border-2 border-black px-1.5 py-0.5 font-black mx-0.5 shadow-[2px_2px_0px_#000] hover:-translate-y-0.5 transition-all inline-block no-underline text-xs"
+          title="View source"
+        >
+          {part} ↗
+        </a>
+      );
+    return part;
+  });
+}
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
