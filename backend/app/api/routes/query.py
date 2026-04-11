@@ -3,6 +3,8 @@
 Proxies to the generic planner/executor/validator Orchestrator (if available)
 or falls back to a simple LLM call with ChromaDB retrieval context.
 """
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import QueryRequest, QueryResponse
@@ -11,6 +13,8 @@ from app.utils.logger import get_logger
 logger = get_logger("query_route")
 
 router = APIRouter()
+_MAX_CHUNK_CHARS = 700
+_MAX_CONTEXT_CHARS = 2800
 
 
 @router.post("", response_model=QueryResponse)
@@ -42,7 +46,7 @@ async def query(payload: QueryRequest) -> QueryResponse:
             if company_results:
                 retrieval_context += "\n--- Company Documents ---\n"
                 for r in company_results:
-                    retrieval_context += f"{r.get('document', '')}\n\n"
+                    retrieval_context += f"{(r.get('document', '') or '')[:_MAX_CHUNK_CHARS]}\n\n"
 
         # Search regulatory circulars
         reg_results = vs.query(
@@ -53,7 +57,10 @@ async def query(payload: QueryRequest) -> QueryResponse:
         if reg_results:
             retrieval_context += "\n--- Regulatory Circulars ---\n"
             for r in reg_results:
-                retrieval_context += f"{r.get('document', '')}\n\n"
+                retrieval_context += f"{(r.get('document', '') or '')[:_MAX_CHUNK_CHARS]}\n\n"
+
+        if len(retrieval_context) > _MAX_CONTEXT_CHARS:
+            retrieval_context = retrieval_context[:_MAX_CONTEXT_CHARS]
 
     except Exception as exc:
         logger.debug("Retrieval context failed: %s", exc)
@@ -77,12 +84,23 @@ async def query(payload: QueryRequest) -> QueryResponse:
         from app.agents.base import build_llm
         from langchain_core.messages import HumanMessage, SystemMessage
 
+        from app.config import settings
+
         llm = build_llm()
-        response = await llm.ainvoke([
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_prompt),
-        ])
+        response = await asyncio.wait_for(
+            llm.ainvoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_prompt),
+            ]),
+            timeout=settings.QUERY_LLM_TIMEOUT_SECONDS,
+        )
         answer = response.content
+    except TimeoutError as exc:
+        logger.warning("LLM query timed out after %.1fs", settings.QUERY_LLM_TIMEOUT_SECONDS)
+        raise HTTPException(
+            status_code=504,
+            detail="LLM timed out while generating a response. Please try again.",
+        ) from exc
     except Exception as exc:
         logger.exception("LLM query failed")
         raise HTTPException(
