@@ -410,16 +410,12 @@ function DashboardContent() {
                         {state.report.markdown?.split(/(\*\*.*?\*\*|Clause \d+\.?\d*|OLD POLICY:|NEW POLICY:|HIGH|MEDIUM|LOW|Severity:|SEVERITY:)/g).map((part, i) => {
                           if (part.startsWith("Clause"))
                             return (
-                              <a
+                              <span
                                 key={i}
-                                href={state.report?.metadata?.url || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="bg-[#FFE500] border-2 border-black px-1.5 py-0.5 font-black mx-1 shadow-[2px_2px_0px_#000] hover:-translate-y-0.5 transition-all inline-block no-underline"
-                                title="View RBI Source"
+                                className="bg-[#FFE500] border-2 border-black px-1.5 py-0.5 font-black mx-1 shadow-[2px_2px_0px_#000] inline-block"
                               >
-                                {part} ↗
-                              </a>
+                                {part}
+                              </span>
                             );
                           if (part === "OLD POLICY:")
                             return <span key={i} className="text-[#888] line-through font-bold">{part}</span>;
