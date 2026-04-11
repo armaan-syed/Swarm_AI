@@ -6,109 +6,74 @@ or falls back to a simple LLM call with ChromaDB retrieval context.
 import asyncio
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
-from app.models.schemas import QueryRequest, QueryResponse
+from app.models.schemas import QueryRequest
 from app.utils.logger import get_logger
 
 logger = get_logger("query_route")
-
 router = APIRouter()
-_MAX_CHUNK_CHARS = 700
-_MAX_CONTEXT_CHARS = 2800
 
+@router.post("/stream")
+async def query_stream(payload: QueryRequest) -> StreamingResponse:
+    """Answer a compliance question with real-time streaming tokens."""
+    from app.services.rag_service import get_rag_service
+    from app.agents.base import build_llm
+    from langchain_core.messages import HumanMessage, SystemMessage
 
-@router.post("", response_model=QueryResponse)
-async def query(payload: QueryRequest) -> QueryResponse:
-    """Answer a natural-language compliance question.
-
-    Uses ChromaDB to retrieve relevant company/regulatory documents as context,
-    then passes the enriched prompt to the LLM.
-    """
     if not payload.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-    # 1. Retrieve context from ChromaDB
-    retrieval_context = ""
-    try:
-        from app.services.vector_store import get_vector_store
-        from app.config import settings
-
-        vs = get_vector_store()
-
-        # Search company docs if company_id is provided
-        if payload.company_id:
-            company_results = vs.query(
-                collection=settings.CHROMA_COMPANY_COLLECTION,
-                text=payload.query,
-                n_results=3,
-                where={"company_id": payload.company_id},
+    async def generate():
+        # 1. Retrieve GROUNDED context (Synchronous relative to the start of stream)
+        retrieval_context = ""
+        try:
+            rag_service = get_rag_service()
+            mixed_context = await rag_service.retrieve_mixed_context(
+                query=payload.query,
+                company_id=payload.company_id,
+                top_k_regulatory=3,
+                top_k_company=2
             )
-            if company_results:
-                retrieval_context += "\n--- Company Documents ---\n"
-                for r in company_results:
-                    retrieval_context += f"{(r.get('document', '') or '')[:_MAX_CHUNK_CHARS]}\n\n"
+            if mixed_context["company"]:
+                retrieval_context += "\n--- INTERNAL POLICY CONTEXT ---\n"
+                for ctx in mixed_context["company"]:
+                    retrieval_context += f"{ctx['chunk']}\n\n"
+            if mixed_context["regulatory"]:
+                retrieval_context += "\n--- REGULATORY FRAMEWORK CONTEXT ---\n"
+                for ctx in mixed_context["regulatory"]:
+                    retrieval_context += f"{ctx['chunk']}\n\n"
+        except Exception as exc:
+            logger.warning("RAG retrieval failed for stream: %s", exc)
 
-        # Search regulatory circulars
-        reg_results = vs.query(
-            collection=settings.CHROMA_CIRCULAR_COLLECTION,
-            text=payload.query,
-            n_results=3,
+        # 2. Build Prompt
+        system_prompt = (
+            "You are the Swarm AI Compliance Assistant. Your purpose is to provide "
+            "precise, grounded answers to regulatory questions based on Indian "
+            "financial frameworks (RBI, SEBI, MCA) and internal company policies. "
+            "\n\nSTRICT RULES:\n"
+            "1. If context is provided, prioritize it above general knowledge.\n"
+            "2. If you don't know the answer or the context is insufficient, state it clearly.\n"
+            "3. Cite specific circulars, clauses, or internal document names where available.\n"
+            "4. Maintain a professional, executive tone."
         )
-        if reg_results:
-            retrieval_context += "\n--- Regulatory Circulars ---\n"
-            for r in reg_results:
-                retrieval_context += f"{(r.get('document', '') or '')[:_MAX_CHUNK_CHARS]}\n\n"
+        full_user_prompt = payload.query
+        if retrieval_context.strip():
+            full_user_prompt = f"RELEVANT CONTEXT:\n{retrieval_context}\n\nUSER QUESTION: {payload.query}"
+        if payload.context:
+            full_user_prompt += f"\n\nADDITIONAL RUNTIME CONTEXT: {payload.context}"
 
-        if len(retrieval_context) > _MAX_CONTEXT_CHARS:
-            retrieval_context = retrieval_context[:_MAX_CONTEXT_CHARS]
-
-    except Exception as exc:
-        logger.debug("Retrieval context failed: %s", exc)
-
-    # 2. Build LLM prompt
-    system_prompt = (
-        "You are a compliance assistant for Indian financial services. "
-        "Answer the user's question accurately using the provided context. "
-        "If the context does not contain enough information, say so clearly. "
-        "Cite specific circulars or clauses when possible."
-    )
-
-    user_prompt = payload.query
-    if retrieval_context.strip():
-        user_prompt = f"Context:\n{retrieval_context}\n\nQuestion: {payload.query}"
-    if payload.context:
-        user_prompt += f"\n\nAdditional context: {payload.context}"
-
-    # 3. Call LLM
-    try:
-        from app.agents.base import build_llm
-        from langchain_core.messages import HumanMessage, SystemMessage
-
-        from app.config import settings
-
-        llm = build_llm()
-        response = await asyncio.wait_for(
-            llm.ainvoke([
+        # 3. Stream from Intelligence Engine
+        try:
+            llm = build_llm()
+            async for chunk in llm.astream([
                 SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt),
-            ]),
-            timeout=settings.QUERY_LLM_TIMEOUT_SECONDS,
-        )
-        answer = response.content
-    except TimeoutError as exc:
-        logger.warning("LLM query timed out after %.1fs", settings.QUERY_LLM_TIMEOUT_SECONDS)
-        raise HTTPException(
-            status_code=504,
-            detail="LLM timed out while generating a response. Please try again.",
-        ) from exc
-    except Exception as exc:
-        logger.exception("LLM query failed")
-        raise HTTPException(
-            status_code=503, detail=f"LLM unavailable: {exc}"
-        ) from exc
+                HumanMessage(content=full_user_prompt),
+            ]):
+                if chunk.content:
+                    yield chunk.content
+        except Exception as exc:
+            logger.exception("Streaming LLM call failed")
+            yield f"\n\n[ERROR: Intelligence engine connection interrupted: {str(exc)}]"
 
-    return QueryResponse(
-        success=True,
-        answer=answer,
-        company_id=payload.company_id,
-    )
+    return StreamingResponse(generate(), media_type="text/plain")

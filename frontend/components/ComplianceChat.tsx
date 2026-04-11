@@ -40,23 +40,58 @@ export function ComplianceChat({ companyId, context }: ComplianceChatProps) {
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
     setIsLoading(true);
 
+    // Initial empty assistant message that we will stream into
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
-      const data = await apiClient.post<any>("/query", {
-        query: userMsg,
-        company_id: companyId,
-        context: context,
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+      const response = await fetch(`${baseUrl}/query/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: userMsg,
+          company_id: companyId,
+          context: context,
+        }),
       });
 
-      if (data.success) {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
-      } else {
-        throw new Error(data.detail || "Failed to get answer");
+      if (!response.ok) throw new Error("Stream connection failed");
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      if (!reader) throw new Error("No reader available");
+
+      let accumulatedResponse = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        accumulatedResponse += chunk;
+
+        // Update the last message (the assistant's) with the accumulated chunks
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: "assistant",
+            content: accumulatedResponse,
+          };
+          return newMessages;
+        });
       }
     } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: `Error: ${err.message || "Engine connection lost."}` },
-      ]);
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: "assistant",
+          content: `Error: ${err.message || "Engine connection lost."}`,
+        };
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
