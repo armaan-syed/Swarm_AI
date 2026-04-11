@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3.2"
     OLLAMA_EMBED_MODEL: str = "nomic-embed-text"
     LLM_TEMPERATURE: float = 0.2
+    QUERY_LLM_TIMEOUT_SECONDS: float = 30.0
 
     # LLM - Groq (optional fallback, free tier API)
     GROQ_API_KEY: str = ""

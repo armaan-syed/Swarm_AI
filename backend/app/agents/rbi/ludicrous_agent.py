@@ -72,13 +72,13 @@ class LudicrousSpeedAgent(BaseAgent):
 
         try:
             import asyncio
-            # Use a short timeout for the LLM; if it fails or is slow, fallback to heuristic
+            # Allow slower local LLM responses before falling back.
             response = await asyncio.wait_for(
                 self.llm.ainvoke([
                     SystemMessage(content=BLITZ_SYSTEM),
                     HumanMessage(content=prompt)
                 ]),
-                timeout=8.0,
+                timeout=30.0,
             )
 
             parsed = self._parse_json(response.content)
@@ -91,7 +91,7 @@ class LudicrousSpeedAgent(BaseAgent):
                 emails=parsed.get("emails", heuristic.emails),
             )
         except Exception as exc:
-            logger.warning(f"[Blitz] LLM failed or timed out: {exc}; using heuristic fallback")
+            logger.warning("[Blitz] LLM failed or timed out: %r; using heuristic fallback", exc)
             return heuristic
 
     def _parse_json(self, raw: str) -> dict:
