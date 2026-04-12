@@ -19,7 +19,14 @@ export async function runOne(url: string, source = "RBI"): Promise<unknown> {
 
 /** Fetch the latest optimized compliance intelligence briefing. */
 export async function getLatestIntelligence(): Promise<{ success: boolean; result: any }> {
-  return apiClient.get<{ success: boolean; result: any }>("/compliance/optimized");
+  try {
+    return await apiClient.get<{ success: boolean; result: any }>("/compliance/optimized");
+  } catch (err: any) {
+    if (err?.status === 404) {
+      return apiClient.get<{ success: boolean; result: any }>("/compliance/prebaked");
+    }
+    throw err;
+  }
 }
 
 /** Dispatch compliance briefings to all departments via the primary engine. */

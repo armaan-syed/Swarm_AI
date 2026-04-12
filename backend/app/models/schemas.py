@@ -26,8 +26,12 @@ class UserOut(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    # Keep fields optional to avoid FastAPI 422 on variant client payloads.
+    # Route-level validation returns explicit 400 with a clear message.
+    email: str | None = None
+    password: str | None = None
+    username: str | None = None
+    access_key: str | None = None
 
 
 class AuthResponse(BaseModel):

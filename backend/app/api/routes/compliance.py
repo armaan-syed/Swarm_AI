@@ -94,6 +94,7 @@ async def upload_company_document(
 # ── Intelligence Feed ──────────────────────────────────────────────────────────
 
 @router.get("/optimized")
+@router.get("/prebaked")
 async def get_latest_intelligence() -> dict:
     """Retrieve the latest ground-truth compliance analysis.
     

@@ -13,9 +13,18 @@ async def login(payload: LoginRequest) -> AuthResponse:
     client = get_supabase_auth()
     if not client:
         raise HTTPException(status_code=503, detail="Authentication service unavailable")
+
+    email = (payload.email or payload.username or "").strip()
+    password = (payload.password or payload.access_key or "").strip()
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="email and password are required (accepted aliases: username, access_key)",
+        )
+
     try:
         # Sign in through Supabase Auth
-        res = client.auth.sign_in_with_password({"email": payload.email, "password": payload.password})
+        res = client.auth.sign_in_with_password({"email": email, "password": password})
         if not res.user or not res.session:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return AuthResponse(
@@ -35,13 +44,21 @@ async def signup(payload: LoginRequest) -> AuthResponse:
     if not admin_client or not auth_client:
         raise HTTPException(status_code=503, detail="Authentication service unavailable")
     
+    email = (payload.email or payload.username or "").strip()
+    password = (payload.password or payload.access_key or "").strip()
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="email and password are required (accepted aliases: username, access_key)",
+        )
+
     try:
         # 1. Attempt to create and auto-verify user via Admin API
         # This bypasses the email confirmation requirement for the demo
         try:
             admin_client.auth.admin.create_user({
-                "email": payload.email,
-                "password": payload.password,
+                "email": email,
+                "password": password,
                 "email_confirm": True
             })
         except Exception as e:
@@ -51,8 +68,8 @@ async def signup(payload: LoginRequest) -> AuthResponse:
         
         # 2. Log in immediately
         res = auth_client.auth.sign_in_with_password({
-            "email": payload.email, 
-            "password": payload.password
+            "email": email,
+            "password": password
         })
         
         if not res.user or not res.session:
