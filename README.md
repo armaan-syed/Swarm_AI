@@ -1,10 +1,8 @@
-# Pravaha
+# Swarm-AI
 
 **AI-Powered Compliance Monitoring & Regulatory Intelligence Platform**
 
-Pravaha is an intelligent compliance monitoring system that uses multi-agent AI architecture to track, analyze, and report on regulatory changes from Indian financial authorities (RBI, SEBI, MCA).
-
-🔗 **Repository**: [https://github.com/junaidjmomin/pravaha](https://github.com/junaidjmomin/pravaha)
+Swarm-AI is an intelligent compliance monitoring system that uses multi-agent AI architecture to track, analyze, and report on regulatory changes from Indian financial authorities (RBI, SEBI, MCA).
 
 ## 🎯 Features
 
@@ -152,7 +150,7 @@ Once the backend is running, visit:
 ## 📁 Project Structure
 
 ```
-pravaha/
+Swarm-AI/
 ├── backend/
 │   ├── app/
 │   │   ├── agents/          # AI agent implementations
@@ -181,4 +179,4 @@ This project is private and proprietary.
 
 ## 👥 Team
 
-Developed by the Pravaha team for intelligent compliance monitoring.
+Developed by the Swarm-AI team for intelligent compliance monitoring.
